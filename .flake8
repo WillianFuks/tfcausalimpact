@@ -1,0 +1,5 @@
+[flake8]
+max-line-length=90
+exclude =
+    setup.py
+    causalimpact/__init__.py
