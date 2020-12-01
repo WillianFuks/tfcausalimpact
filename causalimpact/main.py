@@ -180,7 +180,7 @@ class CausalImpact():
         pre_period: Union[List[int], List[str], List[pd.Timestamp]],
         post_period: Union[List[int], List[str], List[pd.Timestamp]],
         model: Optional[tfp.sts.StructuralTimeSeries] = None,
-        model_args: Optional[Dict[str, Any]] = None,
+        model_args: Optional[Dict[str, Any]] = {},
         alpha: float = 0.05,
         **kwargs: Dict[str, Any]
     ):
@@ -197,9 +197,9 @@ class CausalImpact():
         self.alpha = processed_input['alpha']
         self.model_args = processed_input['model_args']
         self.model = processed_input['model']
-        self.normed_pre_data = None
-        self.normed_post_data = None
-        self.mu_sig = None
+        self.normed_pre_data = processed_input['normed_pre_data']
+        self.normed_post_data = processed_input['normed_post_data']
+        self.mu_sig = processed_input['processed_input']
         self._fit_model()
         # self._process_posterior_inferences()
 
@@ -260,16 +260,6 @@ class CausalImpact():
         """
         fit_args = self._process_fit_args()
         self.trained_model = self.model.fit(**fit_args)
-
-    def _standardize_pre_post_data(self):
-        """
-        Applies normal standardization in pre and post data, based on mean and std of
-        pre-data (as it's used for training our model). Sets new values for
-        `self.pre_data`, `self.post_data`, `self.mu_sig`.
-        """
-        self.normed_pre_data, (mu, sig) = standardize(self.pre_data)
-        self.normed_post_data = (self.post_data - mu) / sig
-        self.mu_sig = (mu[0], sig[0])
 
     def _process_posterior_inferences(self):
         """

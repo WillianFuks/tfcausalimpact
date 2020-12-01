@@ -13,20 +13,15 @@
 # limitations under the License.
 
 
-# import os
-
 import mock
 import numpy as np
 import pandas as pd
 import pytest
-import tensorflow as tf
 import tensorflow_probability as tfp
 
 
 import causalimpact.data as cidata
 
-
-tf.get_logger().setLevel('ERROR')
 
 # from numpy.testing import assert_array_equal
 # from pandas.core.indexes.range import RangeIndex
@@ -260,110 +255,15 @@ def test_alpha_input():
     )
 
 
-def test_process_model_args():
-    model_args = cidata.process_model_args(dict(standardize=False))
-    assert model_args['standardize'] is False
-
-    model_args = cidata.process_model_args(dict(standardize=True))
-    assert model_args['standardize'] is True
-
-    model_args = cidata.process_model_args({})
-    assert model_args['standardize'] is True
-
-    with pytest.raises(ValueError) as excinfo:
-        cidata.process_model_args(dict(standardize='yes'))
-    assert str(excinfo.value) == 'Standardize argument must be of type bool.'
-
-    model_args = cidata.process_model_args(dict(niter=10))
-    assert model_args['niter'] == 10
-
-    model_args = cidata.process_model_args({})
-    assert model_args['niter'] == 100
-
-    with pytest.raises(ValueError) as excinfo:
-        cidata.process_model_args(dict(niter='yes'))
-    assert str(excinfo.value) == 'niter argument must be of type int.'
-
-    model_args = cidata.process_model_args({})
-    assert model_args['prior_level_sd'] == 0.01
-
-    with pytest.raises(ValueError) as excinfo:
-        cidata.process_model_args(dict(prior_level_sd='test'))
-    assert str(excinfo.value) == 'prior_level_sd argument must be of type float.'
-
-    model_args = cidata.process_model_args(dict(fit_method='hmc'))
-    assert model_args['fit_method'] == 'hmc'
-
-    model_args = cidata.process_model_args(dict(fit_method='vi'))
-    assert model_args['fit_method'] == 'vi'
-
-    with pytest.raises(ValueError) as excinfo:
-        model_args = cidata.process_model_args(dict(fit_method='test'))
-    assert str(excinfo.value) == 'fit_method can be either "hmc" or "vi".'
-
-    model_args = cidata.process_model_args(dict(nseasons=7))
-    assert model_args['nseasons'] == 7
-
-    model_args = cidata.process_model_args({})
-    assert model_args['nseasons'] == 1
-
-    with pytest.raises(ValueError) as excinfo:
-        model_args = cidata.process_model_args(dict(nseasons='test'))
-    assert str(excinfo.value) == 'nseasons argument must be of type int.'
-
-    model_args = cidata.process_model_args({})
-    assert model_args['season_duration'] == 1
-
-    model_args = cidata.process_model_args(dict(nseasons=7, season_duration=24))
-    assert model_args['season_duration'] == 24
-
-    with pytest.raises(ValueError) as excinfo:
-        model_args = cidata.process_model_args(dict(season_duration='test'))
-    assert str(excinfo.value) == 'season_duration argument must be of type int.'
-
-    with pytest.raises(ValueError) as excinfo:
-        model_args = cidata.process_model_args(dict(season_duration=24))
-    assert str(excinfo.value) == ('nseasons must be bigger than 1 when season_duration '
-                                  'is also bigger than 1.')
-
-
-def test_check_input_model():
-    with pytest.raises(ValueError) as excinfo:
-        cidata.check_input_model(model='test')
-    assert str(excinfo.value) == 'Input model must be of type StructuralTimeSeries.'
-
-#    ucm = UnobservedComponents(rand_data.iloc[:101, 0], level='llevel',
-#                               exog=rand_data.iloc[:101, 1:])
-#    ucm.level = False
-#    with pytest.raises(ValueError) as excinfo:
-#        CausalImpact(rand_data, pre_int_period, post_int_period, model=ucm)
-#    assert str(excinfo.value) == 'Model must have level attribute set.'
-#
-#    ucm = UnobservedComponents(rand_data.iloc[:101, 0], level='llevel',
-#                               exog=rand_data.iloc[:101, 1:])
-#    ucm.exog = None
-#    with pytest.raises(ValueError) as excinfo:
-#        CausalImpact(rand_data, pre_int_period, post_int_period, model=ucm)
-#    assert str(excinfo.value) == 'Model must have exog attribute set.'
-#
-#    ucm = UnobservedComponents(rand_data.iloc[:101, 0], level='llevel',
-#                               exog=rand_data.iloc[:101, 1:])
-#    ucm.data = None
-#    with pytest.raises(ValueError) as excinfo:
-#        CausalImpact(rand_data, pre_int_period, post_int_period, model=ucm)
-#    assert str(excinfo.value) == 'Model must have data attribute set.'
-
-
 def test_process_input_data(rand_data, pre_int_period, post_int_period, date_rand_data,
                             pre_str_period, post_str_period, monkeypatch):
-
     for type_ in ['int', 'str']:
         cur_data = rand_data if type_ == 'int' else date_rand_data
         cur_pre_period = pre_int_period if type_ == 'int' else pre_str_period
         cur_post_period = post_int_period if type_ == 'int' else post_str_period
 
         results = cidata.process_input_data(cur_data, cur_pre_period, cur_post_period,
-                                            None, None, 0.05)
+                                            None, {}, 0.05)
 
         pd.testing.assert_frame_equal(results['data'], cur_data)
         assert results['pre_period'] == cur_pre_period
@@ -376,55 +276,56 @@ def test_process_input_data(rand_data, pre_int_period, post_int_period, date_ran
             results['post_data'],
             cur_data.loc[cur_post_period[0]: cur_post_period[1], :]
         )
+
+        np.testing.assert_almost_equal(
+            results['normed_pre_data'].mean().values,
+            np.array([0, 0, 0])
+        )
+        np.testing.assert_almost_equal(
+            results['normed_pre_data'].std().values,
+            np.array([1, 1, 1]),
+            decimal=2
+        )
+
         assert results['model'] is None
-        assert results['model_args'] == {'standardize': True, 'prior_level_sd': 0.01,
-                                         'niter': 100, 'nseasons': 1,
-                                         'season_duration': 1}
+        assert results['model_args'] == {
+            'standardize': True,
+            'prior_level_sd': 0.01,
+            'niter': 100,
+            'nseasons': 1,
+            'season_duration': 1,
+            'fit_method': 'hmc'
+        }
         assert results['alpha'] == 0.05
 
-    # testing model is set
-    model = tfp.sts.LocalLevel()
-    for type_ in ['int']:
-        cur_data = rand_data if type_ == 'int' else date_rand_data
-        cur_pre_period = pre_int_period if type_ == 'int' else pre_str_period
-        cur_post_period = post_int_period if type_ == 'int' else post_str_period
-
+        # tests user input model setting
+        model = tfp.sts.LocalLevel()
         results = cidata.process_input_data(cur_data, cur_pre_period, cur_post_period,
-                                            model, None, 0.05)
-
-        pd.testing.assert_frame_equal(results['data'], cur_data)
-        assert results['pre_period'] == cur_pre_period
-        assert results['post_period'] == cur_post_period
-        pd.testing.assert_frame_equal(
-            results['pre_data'],
-            cur_data.loc[cur_pre_period[0]: cur_pre_period[1], :]
-        )
-        pd.testing.assert_frame_equal(
-            results['post_data'],
-            cur_data.loc[cur_post_period[0]: cur_post_period[1], :]
-        )
+                                            model, {}, 0.05)
         assert isinstance(results['model'], tfp.sts.LocalLevel)
-        assert results['model_args'] == {'standardize': True, 'prior_level_sd': 0.01,
-                                         'niter': 100, 'nseasons': 1,
-                                         'season_duration': 1}
-        assert results['alpha'] == 0.05
+
+        # test normalization of data not set
+        results = cidata.process_input_data(cur_data, cur_pre_period, cur_post_period,
+                                            None, {'standardize': False}, 0.05)
+        assert results['normed_pre_data'] is None
+        assert results['normed_post_data'] is None
 
     # test Exceptions
     with pytest.raises(ValueError) as excinfo:
-        cidata.process_input_data(None, pre_int_period, post_int_period, None, None,
+        cidata.process_input_data(None, pre_int_period, post_int_period, None, {},
                                   0.05)
     assert str(excinfo.value) == 'data input argument cannot be empty'
 
     with pytest.raises(ValueError) as excinfo:
-        cidata.process_input_data(rand_data, None, post_int_period, None, None, 0.05)
+        cidata.process_input_data(rand_data, None, post_int_period, None, {}, 0.05)
     assert str(excinfo.value) == 'pre_period input argument cannot be empty'
 
     with pytest.raises(ValueError) as excinfo:
-        cidata.process_input_data(rand_data, pre_int_period, None, None, None, 0.05)
+        cidata.process_input_data(rand_data, pre_int_period, None, None, {}, 0.05)
     assert str(excinfo.value) == 'post_period input argument cannot be empty'
 
     with pytest.raises(ValueError) as excinfo:
-        cidata.process_input_data(None, None, post_int_period, None, None, 0.05)
+        cidata.process_input_data(None, None, post_int_period, None, {}, 0.05)
     assert str(excinfo.value) == 'data, pre_period input arguments cannot be empty'
 
     # testing calls
@@ -434,22 +335,31 @@ def test_process_input_data(rand_data, pre_int_period, post_int_period, date_ran
     process_pre_post_data_mock.return_value = ['pre_data', 'post_data']
     process_alpha_mock = mock.Mock()
     process_model_args_mock = mock.Mock()
-    process_model_args_mock.return_value = 'model_args'
+    process_model_args_mock.return_value = {'standardize': True}
     check_input_model_mock = mock.Mock()
+    standardize_pre_and_post_data_mock = mock.Mock()
+    standardize_pre_and_post_data_mock.return_value = ('normed_pre_data',
+                                                       'normed_post_data',
+                                                       'mu_sig')
 
     monkeypatch.setattr('causalimpact.data.format_input_data', format_input_data_mock)
     monkeypatch.setattr('causalimpact.data.process_pre_post_data',
                         process_pre_post_data_mock)
     monkeypatch.setattr('causalimpact.data.process_alpha', process_alpha_mock)
-    monkeypatch.setattr('causalimpact.data.process_model_args', process_model_args_mock)
-    monkeypatch.setattr('causalimpact.data.check_input_model', check_input_model_mock)
+    monkeypatch.setattr('causalimpact.data.cimodel.process_model_args',
+                        process_model_args_mock)
+    monkeypatch.setattr('causalimpact.data.cimodel.check_input_model',
+                        check_input_model_mock)
+    monkeypatch.setattr('causalimpact.data.standardize_pre_and_post_data',
+                        standardize_pre_and_post_data_mock)
 
-    results = cidata.process_input_data('input_data', pre_int_period, post_int_period,
-                                        'model', None, 0.05)
+    cidata.process_input_data('input_data', pre_int_period, post_int_period, 'model',
+                              {}, 0.05)
 
     format_input_data_mock.assert_called_once_with('input_data')
     process_pre_post_data_mock.assert_called_once_with('processed_data', pre_int_period,
                                                        post_int_period)
     process_alpha_mock.assert_called_once_with(0.05)
     process_model_args_mock.assert_called_once_with({})
-    check_input_model_mock.assert_called_once_with('model')
+    check_input_model_mock.assert_called_once_with('model', 'pre_data', 'post_data')
+    standardize_pre_and_post_data_mock.assert_called_once_with('pre_data', 'post_data')

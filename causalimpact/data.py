@@ -21,8 +21,10 @@ Module responsible for processing data that feeds the causal impact algorithm.
 import pandas as pd
 import numpy as np
 import tensorflow_probability as tfp
+import causalimpact.model as cimodel
 
-from typing import Union, List, Dict, Any, Optional
+from typing import Union, List, Dict, Any, Optional, Tuple
+from causalimpact.misc import standardize
 
 
 def process_input_data(
@@ -86,44 +88,91 @@ def process_input_data(
       Dict[str, Any]:
         data: pd.DataFrame
             Validated data, first column is `y` and the others are the `X` covariates.
+        pre_period: List[int]
+        post_period: List[int]
         pre_data: pd.DataFrame
             Data sliced using `pre_period` values.
         post_data: pd.DataFrame
+        normed_pre_data: pd.DataFrame
+            If `standardize==True` then this is the result of the input data being
+            normalized.
+        normed_post_data: pd.DataFrame
         model: Optional[tfp.sts.StructuralTimeSeries]
             Either `None` or `tfp.sts.StructuralTimeSeries` validated input model.
         model_args: Dict[str, Any]
             Dict containing general information related to how to fit and run the
             structural time series model.
         alpha: float
+        mu_sig: Tuple[float, float]
+            Mean and standard deviation used to normalize just the response variable `y`.
 
     Raises
     ------
       ValueError: if input arguments is `None`.
     """
     locals_ = locals()
-    required_args = ['data', 'pre_period', 'post_period', 'alpha']
-    none_input_args = [arg for arg in required_args if locals_[arg] is None]
-    if any(locals_[arg] is None for arg in required_args):
+    none_args = [arg for arg in locals_ if locals_[arg] is None and arg != 'model']
+
+    if none_args:
         raise ValueError(
-            f'{", ".join(none_input_args)} '
-            f'input argument{"s" if len(none_input_args) > 1 else ""} cannot be empty'
+            f'{", ".join(none_args)} '
+            f'input argument{"s" if len(none_args) > 1 else ""} cannot be empty'
         )
+
     processed_data = format_input_data(data)
     pre_data, post_data = process_pre_post_data(processed_data, pre_period, post_period)
     alpha = process_alpha(alpha)
-    model_args = process_model_args(model_args if model_args else {})
+    model_args = cimodel.process_model_args(model_args if model_args else {})
+    normed_data = (standardize_pre_and_post_data(pre_data, post_data) if
+                   model_args['standardize'] else (None, None, None))
+
     if model:
-        check_input_model(model)
+        cimodel.check_input_model(model, pre_data, post_data)
+    else:
+        model = cimodel.build_default_model(
+            normed_data[0] if model_args['standardize'] else pre_data,
+            normed_data[1] if model_args['standardize'] else post_data,
+            model_args['prior_level_sd']
+        )
     return {
         'data': processed_data,
         'pre_period': pre_period,
         'post_period': post_period,
         'pre_data': pre_data,
         'post_data': post_data,
+        'normed_pre_data': normed_data[0],
+        'normed_post_data': normed_data[1],
         'model': model,
         'model_args':  model_args,
-        'alpha': alpha
+        'alpha': alpha,
+        'mu_sig': normed_data[2]
     }
+
+
+def standardize_pre_and_post_data(
+    pre_data: pd.DataFrame,
+    post_data: pd.DataFrame
+) -> Tuple[pd.DataFrame, pd.DataFrame, Tuple[float, float]]:
+    """
+    Applies standardization in pre and post data, based on mean and standard deviation
+    of `pre_data` (as it's used for training the causal impact model).
+
+    Args
+    ----
+      pre_data: pd.DataFrame
+          data selected to be the pre-intervention dataset of causal impact.
+      post_data: pd.DataFrame
+
+    Returns
+    -------
+      Tuple[pd.DataFrame, pd.DataFrame, Tuple[float, float]]
+        `pre_data` and `post_data` normalized along with the mean and variance used for
+        response variable `y` only.
+    """
+    normed_pre_data, (mu, sig) = standardize(pre_data)
+    normed_post_data = (post_data - mu) / sig
+    mu_sig = (mu[0], sig[0])
+    return (normed_pre_data, normed_post_data, mu_sig)
 
 
 def format_input_data(data: Union[np.array, pd.DataFrame]) -> pd.DataFrame:
@@ -374,109 +423,3 @@ def process_alpha(alpha: float) -> float:
             'alpha must range between 0 (zero) and 1 (one) inclusive.'
         )
     return alpha
-
-
-def process_model_args(model_args: Dict[str, Any]) -> Dict[str, Any]:
-    """
-    Process general parameters related to how Causal Impact will be implemented, such
-    as standardization procedure or the addition of seasonal components to the model.
-
-    Args
-    ----
-      model_args:
-        standardize: bool
-            If `True`, standardize data so result has zero mean and unitary standard
-            deviation.
-        prior_level_sd: float
-            Standard deviation that sets initial local level distribution. Default
-            value is 0.01 which means the linear regression is expected to explain
-            well the observed data. In cases where this is not expected, then it's also
-            possible to use the value 0.1. Still, this value will increase considerably
-            the extension of the random walk variance modeling data which can lead to
-            unreliable predictions (this might indicate that better covariates are
-            required).
-        fit_method: str
-            Which method to use when fitting the structural time series model. Can be
-            either `hmc` which stands for "Hamiltonian Monte Carlo" or "vi", i.e.,
-            "variational inference". The first is slower but more accurate whilst the
-            latter is the opposite. Defaults to `hmc` which prioritizes accuracy.
-        niter: int
-            How many iterations to run either for `hmc` or `vi` algorithms.
-        nseasons: int
-            Specifies the duration of the period of the seasonal component; if input
-            data is specified in terms of days, then choosing nseasons=7 adds a weekly
-            seasonal effect.
-        season_duration: int
-            Specifies how many data points each value in season spans over. A good
-            example to understand this argument is to consider a hourly data as input.
-            For modeling a weekly season on this data, one can specify `nseasons=7` and
-            season_duration=24 which means each value that builds the season component
-            is repeated for 24 data points. Default value is 1 which means the season
-            component spans over just 1 point (this in practice doesn't change
-            anything). If this value is specified and bigger than 1 then `nseasons`
-            must be specified and bigger than 1 as well.
-
-    Returns
-    -------
-        Dict[str, Any]
-            Contains processed input args.
-
-    Raises
-    ------
-      ValueError: if standardize is not of type `bool`.
-                  if nseasons doesn't follow the pattern [{str key: number}].
-    """
-    standardize = model_args.get('standardize', True)
-    if not isinstance(standardize, bool):
-        raise ValueError('Standardize argument must be of type bool.')
-    model_args['standardize'] = standardize
-
-    prior_level_sd = model_args.get('prior_level_sd', 0.01)
-    if not isinstance(prior_level_sd, float):
-        raise ValueError('prior_level_sd argument must be of type float.')
-    model_args['prior_level_sd'] = prior_level_sd
-
-    niter = model_args.get('niter', 100)
-    if not isinstance(niter, int):
-        raise ValueError('niter argument must be of type int.')
-    model_args['niter'] = niter
-
-    fit_method = model_args.get('fit_method', 'hmc')
-    if fit_method not in {'hmc', 'vi'}:
-        raise ValueError('fit_method can be either "hmc" or "vi".')
-    model_args['niter'] = niter
-
-    nseasons = model_args.get('nseasons', 1)
-    if not isinstance(nseasons, int):
-        raise ValueError('nseasons argument must be of type int.')
-    model_args['nseasons'] = nseasons
-
-    season_duration = model_args.get('season_duration', 1)
-    if not isinstance(season_duration, int):
-        raise ValueError('season_duration argument must be of type int.')
-    if nseasons <= 1 and season_duration > 1:
-        raise ValueError('nseasons must be bigger than 1 when season_duration is also '
-                         'bigger than 1.')
-    model_args['season_duration'] = season_duration
-
-    return model_args
-
-
-def check_input_model(model: tfp.sts.StructuralTimeSeries) -> None:
-    """
-    Checkes whether input model was properly built and is ready to be run.
-
-    Args
-    ----
-      model: StructuralTimeSeries
-          Can be either default `LocalLevel` or user specified generic model.
-
-    Raises
-    ------
-      ValueError: if model is not of appropriate type
-                  if model is built without observed time series data.
-    """
-    if not isinstance(model, tfp.sts.StructuralTimeSeries):
-        raise ValueError('Input model must be of type StructuralTimeSeries.')
-    # if not model.batch_shape.num_elements() > 0:
-        # raise ValueError('Input model must contain observed time series data.')

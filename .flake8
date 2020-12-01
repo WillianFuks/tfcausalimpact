@@ -3,3 +3,5 @@ max-line-length=90
 exclude =
     setup.py
     causalimpact/__init__.py
+/*per-file-ignores =*/
+    /*causalimpact/model.py: E501*/
