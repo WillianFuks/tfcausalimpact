@@ -287,7 +287,7 @@ def test_process_input_data(rand_data, pre_int_period, post_int_period, date_ran
             decimal=2
         )
 
-        assert results['model'] is None
+        assert isinstance(results['model'], tfp.sts.StructuralTimeSeries)
         assert results['model_args'] == {
             'standardize': True,
             'prior_level_sd': 0.01,
@@ -334,9 +334,12 @@ def test_process_input_data(rand_data, pre_int_period, post_int_period, date_ran
     process_pre_post_data_mock = mock.Mock()
     process_pre_post_data_mock.return_value = ['pre_data', 'post_data']
     process_alpha_mock = mock.Mock()
+    process_alpha_mock.return_value = 0.05
     process_model_args_mock = mock.Mock()
-    process_model_args_mock.return_value = {'standardize': True}
+    process_model_args_mock.return_value = {'standardize': True, 'prior_level_sd': 0.01}
     check_input_model_mock = mock.Mock()
+    build_default_model_mock = mock.Mock()
+    build_default_model_mock.return_value = 'default model'
     standardize_pre_and_post_data_mock = mock.Mock()
     standardize_pre_and_post_data_mock.return_value = ('normed_pre_data',
                                                        'normed_post_data',
@@ -350,12 +353,13 @@ def test_process_input_data(rand_data, pre_int_period, post_int_period, date_ran
                         process_model_args_mock)
     monkeypatch.setattr('causalimpact.data.cimodel.check_input_model',
                         check_input_model_mock)
+    monkeypatch.setattr('causalimpact.data.cimodel.build_default_model',
+                        build_default_model_mock)
     monkeypatch.setattr('causalimpact.data.standardize_pre_and_post_data',
                         standardize_pre_and_post_data_mock)
 
-    cidata.process_input_data('input_data', pre_int_period, post_int_period, 'model',
-                              {}, 0.05)
-
+    results = cidata.process_input_data('input_data', pre_int_period, post_int_period,
+                                        'model', {}, 0.05)
     format_input_data_mock.assert_called_once_with('input_data')
     process_pre_post_data_mock.assert_called_once_with('processed_data', pre_int_period,
                                                        post_int_period)
@@ -363,3 +367,36 @@ def test_process_input_data(rand_data, pre_int_period, post_int_period, date_ran
     process_model_args_mock.assert_called_once_with({})
     check_input_model_mock.assert_called_once_with('model', 'pre_data', 'post_data')
     standardize_pre_and_post_data_mock.assert_called_once_with('pre_data', 'post_data')
+    build_default_model_mock.assert_not_called()
+
+    assert results == {
+        'data': 'processed_data',
+        'pre_period': [0, 99],
+        'post_period': [100, 199],
+        'pre_data': 'pre_data',
+        'post_data': 'post_data',
+        'normed_pre_data': 'normed_pre_data',
+        'normed_post_data': 'normed_post_data',
+        'model': 'model',
+        'model_args': {'standardize': True, 'prior_level_sd': 0.01},
+        'alpha': 0.05,
+        'mu_sig': 'mu_sig'
+    }
+
+    results = cidata.process_input_data('input_data', pre_int_period, post_int_period,
+                                        None, {}, 0.05)
+    build_default_model_mock.assert_called_once_with('normed_pre_data',
+                                                     'normed_post_data', 0.01)
+    assert results == {
+        'data': 'processed_data',
+        'pre_period': [0, 99],
+        'post_period': [100, 199],
+        'pre_data': 'pre_data',
+        'post_data': 'post_data',
+        'normed_pre_data': 'normed_pre_data',
+        'normed_post_data': 'normed_post_data',
+        'model': 'default model',
+        'model_args': {'standardize': True, 'prior_level_sd': 0.01},
+        'alpha': 0.05,
+        'mu_sig': 'mu_sig'
+    }

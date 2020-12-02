@@ -139,6 +139,8 @@ def check_input_model(
     the design matrix must have
     `shape = (len(pre_data) + len(post_data), cols(pre_data) - 1)` which allows not only
     to fit the model as well as to run the forecasts.
+    The model must be built with data of dtype=tf.float32 or np.float32 as otherwise an
+    error will be thrown when fitting the markov chains.
 
     Args
     ----
@@ -150,8 +152,9 @@ def check_input_model(
     ------
       ValueError: if model is not of appropriate type.
                   if model is built without appropriate observed time series data.
+                  if model components don't have dtype=tf.float32 or np.float32
     """
-    def _check_linear_component(component):
+    def _check_component(component):
         if isinstance(
             component,
             (tfp.sts.LinearRegression, tfp.sts.SparseLinearRegression)
@@ -167,13 +170,18 @@ def check_input_model(
                     f'{(len(pre_data) + len(post_data), len(pre_data.columns) -1)} '
                     'instead.'
                 )
+            assert component.design_matrix.dtype == tf.float32
+        else:
+            for parameter in component.parameters:
+                assert parameter.prior.dtype == tf.float32
+
     if not isinstance(model, tfp.sts.StructuralTimeSeries):
         raise ValueError('Input model must be of type StructuralTimeSeries.')
     if isinstance(model, tfp.sts.Sum):
         for component in model.components:
-            _check_linear_component(component)
+            _check_component(component)
     else:
-        _check_linear_component(model)
+        _check_component(model)
 
 
 def build_default_model(
@@ -206,19 +214,51 @@ def build_default_model(
           A `tfp.sts.LocalLevel` default model with possible another
           `tfp.sts.LinearRegression` component representing the covariates.
     """
-    sample_size = kLocalLevelPriorSampleSize
-    df = sample_size
-    a = df / 2
-    ss = sample_size * prior_level_sd ** 2
-    b = ss / 2
+    def _build_inv_gamma_sd_prior() -> tfd.Distribution:
+        """
+        helper function to build the sd_prior distribution for standard deviation
+        modeling.
+        """
+        sample_size = kLocalLevelPriorSampleSize
+        df = sample_size
+        a = df / 2
+        ss = sample_size * prior_level_sd ** 2
+        b = ss / 2
+        return tfd.InverseGamma(a, b)
 
-    variance_prior = tfd.InverseGamma(a, b)
+    def _build_bijector(dist: tfd.Distribution) -> tfd.Distribution:
+        """
+        helper function for building final bijector given sd_prior.
+        """
+        bijector = SquareRootBijector()
+        new_dist = tfd.TransformedDistribution(dist, bijector)
+        return new_dist
 
-    # model = tfp.sts.Sum([tfp.sts.LocalLevel(observed_time_series=pre_data)])
-    pass
+    sd_prior = _build_inv_gamma_sd_prior()
+    sd_prior = _build_bijector(sd_prior)
+    level_component = tfp.sts.LocalLevel(
+        level_scale_prior=sd_prior,
+        observed_time_series=pre_data.iloc[:, 0].astype(np.float32)
+    )
+    # if it has more than 1 column then it has covariates X; add a linear regressor
+    # component then.
+    if len(pre_data.columns) > 1:
+        # we need to concatenate both pre and post data as this will allow the linear
+        # regressor component to use the post data when running forecasts. As first
+        # column is supposed to have response variable `y` then we filter out just the
+        # remaining columns for the `X` value.
+        complete_data = pd.concat([pre_data, post_data]).astype(np.float32)
+        linear_reg = tfp.sts.LinearRegression(design_matrix=complete_data.iloc[:, 1:])
+        model = tfp.sts.Sum(
+            [level_component, linear_reg],
+            observed_time_series=pre_data.iloc[:, 0].astype(np.float32)
+        )
+    else:
+        model = level_component
+    return model
 
 
-class SquareRootTransform(tfb.Bijector):
+class SquareRootBijector(tfb.Bijector):
     """
     Compute `Y = g(X) = X ** (1 / 2) which transforms variance into standard deviation.
     Main reference for building this bijector is the original [PowerTransform](https://github.com/tensorflow/probability/blob/v0.11.1/tensorflow_probability/python/bijectors/power_transform.py) # noqa: E501
@@ -226,24 +266,19 @@ class SquareRootTransform(tfb.Bijector):
     def __init__(
         self,
         validate_args: bool = False,
-        parameters: Dict[str, Any] = None,
-        name: str = 'square_root_transform'
+        name: str = 'square_root_bijector'
     ):
         """
         Args
         ----
           validate_args: bool
               Indicates whether arguments should be checked for correctness.
-          parameters: Dict[str, Any]
-              Locals dict captured by subclass constructor, to be used for copy/slice
-              re-instantiation operators.
           name: str
               Name given to ops managed by this object.
         """
-        parameters = dict(locals()) if parameters is None else parameters
         with tf.name_scope(name) as name:
             super().__init__(forward_min_event_ndims=0, validate_args=validate_args,
-                             parameters=parameters, name=name)
+                             name=name)
 
     def _forward(self, x: Union[float, np.array, tf.Tensor]) -> tf.Tensor:
         """
@@ -277,3 +312,41 @@ class SquareRootTransform(tfb.Bijector):
               Squared `y`.
         """
         return tf.square(y)
+
+    def _inverse_log_det_jacobian(self, y: tf.Tensor):
+        """
+        When transforming from `P(X)` to `P(Y)` it's necessary to compute the log of the
+        determinant of the Jacobian matrix for each correspondent function `G` which
+        accounts for the volumetric transformations on each domain.
+
+        The inverse log determinant is given by:
+
+        `ln(|J(G^-1(Y)|) = ln(|J(Y ** 2)|) = ln(|2 * Y|) = ln(2 * Y)`
+
+        Args
+        ----
+          y: tf.Tensor
+
+        Returns
+        -------
+          tf.Tensor
+        """
+        return tf.math.log(2 * y)
+
+    def _forward_log_det_jacobian(self, x: tf.Tensor):
+        """
+        Computes the volumetric change when moving forward from `P(X)` to `P(Y)`, given
+        by:
+
+        `ln(|J(G(X))|) = ln(|J(sqrt(X))|) = ln(|(1 / 2) * X ** (-1 / 2)|) =
+                       = (-1 / 2) * ln(4.0 * X)
+
+        Args
+        ----
+          x: tf.Tensor
+
+        Returns
+        -------
+          tf.tensor
+        """
+        return -0.5 * tf.math.log(4.0 * x)

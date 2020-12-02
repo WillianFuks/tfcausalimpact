@@ -32,7 +32,7 @@ def process_input_data(
     pre_period: Union[List[int], List[str], List[pd.Timestamp]],
     post_period: Union[List[int], List[str], List[pd.Timestamp]],
     model: Optional[tfp.sts.StructuralTimeSeries],
-    model_args: Optional[Dict[str, Any]],
+    model_args: Dict[str, Any],
     alpha: float
 ) -> Dict[str, Any]:
     """
@@ -50,7 +50,7 @@ def process_input_data(
       model: Optional[tfd.LinearGaussianStateSpaceModel]
           If `None` then uses default `tfp.sts.LocalLevel` model otherwise it should
           be a `tfd.LinearGaussianStateSpaceModel` specified by client.
-      model_args: Optional[Dict[str, Any]]
+      model_args: Dict[str, Any]
           Sets general variables for building and running the state space model. Possible
           values are:
             standardize: bool
@@ -78,7 +78,6 @@ def process_input_data(
               component spans over just 1 point (this in practice doesn't change
               anything). If this value is specified and bigger than 1 then `nseasons`
               must be specified and bigger than 1 as well.
-
       alpha: float
           Used for two-sided statistical test on comparison between counter-factual
           and observed series.
@@ -97,8 +96,8 @@ def process_input_data(
             If `standardize==True` then this is the result of the input data being
             normalized.
         normed_post_data: pd.DataFrame
-        model: Optional[tfp.sts.StructuralTimeSeries]
-            Either `None` or `tfp.sts.StructuralTimeSeries` validated input model.
+        model: tfp.sts.StructuralTimeSeries
+            `tfp.sts.StructuralTimeSeries` validated input model.
         model_args: Dict[str, Any]
             Dict containing general information related to how to fit and run the
             structural time series model.

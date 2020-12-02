@@ -77,7 +77,7 @@ class CausalImpact():
       model: Optional[tfp.sts.StructuralTimeSeries]
           If `None` then a default `tfp.sts.LocalLevel` model is internally built
           otherwise use the input `model` for fitting and forecasting.
-      model_args: Optional[Dict[str, Any]]
+      model_args: Dict[str, Any]
           Sets general variables for building and running the state space model. Possible
           values are:
             standardize: bool
@@ -180,7 +180,7 @@ class CausalImpact():
         pre_period: Union[List[int], List[str], List[pd.Timestamp]],
         post_period: Union[List[int], List[str], List[pd.Timestamp]],
         model: Optional[tfp.sts.StructuralTimeSeries] = None,
-        model_args: Optional[Dict[str, Any]] = {},
+        model_args: Dict[str, Any] = {},
         alpha: float = 0.05,
         **kwargs: Dict[str, Any]
     ):
@@ -202,55 +202,6 @@ class CausalImpact():
         self.mu_sig = processed_input['processed_input']
         self._fit_model()
         # self._process_posterior_inferences()
-
-    @property
-    def model_args(self):
-        """
-        Gets the general settings used to guide the creation of the Causal model.
-
-        Returns
-        -------
-          dict:
-            standardize: bool.
-        """
-        return self._model_args
-
-    @model_args.setter
-    def model_args(self, value):
-        """
-        Sets general settings for how to build the Causal model.
-
-        Args
-        ----
-          value: dict
-              standardize: bool.
-              nseasons: list of dicts.
-        """
-        if value.get('standardize'):
-            self._standardize_pre_post_data()
-        self._model_args = value
-
-    @property
-    def model(self):
-        """
-        Gets UnobservedComponents model that will be used for computing the Causal
-        Impact algorithm.
-        """
-        return self._model
-
-    @model.setter
-    def model(self, value):
-        """
-        Sets model object.
-
-        Args
-        ----
-          value: `UnobservedComponents`.
-        """
-        if value is None:
-            self._model = self._get_default_model()
-        else:
-            self._model = value
 
     def _fit_model(self) -> None:
         """
