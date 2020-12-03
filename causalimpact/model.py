@@ -22,7 +22,7 @@ creation.
 import pandas as pd
 import numpy as np
 
-from typing import Dict, Any, Union
+from typing import Dict, Any, Union, Tuple, List, Optional
 
 import tensorflow as tf
 import tensorflow_probability as tfp
@@ -256,6 +256,76 @@ def build_default_model(
     else:
         model = level_component
     return model
+
+
+def fit_model(
+    model: tfp.sts.StructuralTimeSeries,
+    observed_time_series: pd.DataFrame,
+    method: str = 'hmc'
+) -> Tuple[Union[List[tf.Tensor], Dict[str, tf.Tensor]], Optional[Dict[str, Any]]]:
+    """
+    Run the Markovian Monte Carlo fitting process for finding the posterior `P(z | y)`
+    where z represents the structural components of the input state space model. Two
+    main methods can be used, either `hmc` which stands for 'Hamiltonian Monte Carlo'
+    and `vi` standing for 'Variational Inference'. The first method is expected to be
+    more accurate while less performante whereas the second is the opposite, that is,
+    faster but less accurate.
+
+    Args
+    ----
+      model: tfp.sts.StructuralTimeSeries
+          Structural time series model built to explain the observed data. It may
+          contain several components such as local level, seasons and so on.
+      observed_time_series: pd.DataFrame
+          Contains the pre-period response variable `y`.
+      method: str
+          Either 'hmc' or 'vi' which selects which fitting process to run.
+
+    Returns
+    -------
+      (samples, kernel_results): Tuple[Union[List[tf.Tensor], Dict[str, tf.Tensor]],
+                                       Dict[str, Any]]
+
+    Raises
+    ------
+      ValueError: If input method is invalid.
+    """
+    if method == 'hmc':
+        # this method does not need to be wrapped in a `tf.function` context as the
+        # internal sampling method already is:
+        # https://github.com/tensorflow/probability/blob/v0.11.1/tensorflow_probability/python/sts/fitting.py#L422 # noqa: E501
+        # https://github.com/tensorflow/probability/issues/348
+        samples, kernel_results = tfp.sts.fit_with_hmc(
+            model=model,
+            observed_time_series=observed_time_series,
+        )
+        return samples, kernel_results
+    elif method == 'vi':
+        optimizer = tf.optimizers.Adam(learning_rate=0.1)
+        variational_steps = 200  # Hardcoded for now
+
+        @tf.function()
+        def _run_vi():  # pragma: no cover
+            variational_posteriors = tfp.sts.build_factored_surrogate_posterior(
+                model=model
+            )
+            tfp.vi.fit_surrogate_posterior(
+                target_log_prob_fn=model.joint_log_prob(
+                    observed_time_series=observed_time_series
+                ),
+                surrogate_posterior=variational_posteriors,
+                optimizer=optimizer,
+                num_steps=variational_steps
+            )
+            # Don't sample too much as varitional inference method is built aiming for
+            # performance first.
+            samples = variational_posteriors.sample(50)
+            return samples, None
+        return _run_vi()
+    else:
+        raise ValueError(
+            f'Input method "{method}" not valid. Choose between "hmc" or "vi".'
+        )
 
 
 class SquareRootBijector(tfb.Bijector):

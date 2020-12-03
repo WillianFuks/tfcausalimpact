@@ -14,6 +14,7 @@
 
 
 import pytest
+import mock
 import pandas as pd
 import numpy as np
 import tensorflow as tf
@@ -200,3 +201,59 @@ def test_build_default_model(rand_data, pre_int_period, post_int_period):
                             np.float32),
                             design_matrix)
     assert design_matrix.dtype == tf.float32
+
+
+def test_fit_model(monkeypatch):
+    observed_time_series = 'observed_time_series'
+    fit_mock = mock.Mock(return_value=('samples', 'kr'))
+    vi_fit_mock = mock.Mock()
+
+    class VarPost:
+        def sample(self, *args):
+            return f'{args[0]} var_post_samples'
+    var_post = VarPost()
+    surrogate_posterior_mock = mock.Mock(return_value=var_post)
+    monkeypatch.setattr('causalimpact.model.tfp.sts.fit_with_hmc', fit_mock)
+    monkeypatch.setattr('causalimpact.model.tfp.sts.build_factored_surrogate_posterior',
+                        surrogate_posterior_mock)
+    monkeypatch.setattr('causalimpact.model.tf.optimizers.Adam',
+                        mock.Mock(return_value='optimizer'))
+    monkeypatch.setattr('causalimpact.model.tfp.vi.fit_surrogate_posterior', vi_fit_mock)
+
+    class Model:
+        def joint_log_prob(self, observed_time_series):
+            return f'target_log_prob of {observed_time_series}'
+    model = Model()
+    samples, kr = cimodel.fit_model(
+        model=model,
+        observed_time_series=observed_time_series,
+        method='hmc'
+    )
+    fit_mock.assert_called_once_with(
+        model=model, observed_time_series=observed_time_series
+    )
+    assert samples == 'samples'
+    assert kr == 'kr'
+    surrogate_posterior_mock.assert_not_called()
+
+    samples, kr = cimodel.fit_model(
+        model=model,
+        observed_time_series=observed_time_series,
+        method='vi'
+    )
+    surrogate_posterior_mock.assert_called_with(model=model)
+    vi_fit_mock.assert_called_once_with(
+        target_log_prob_fn='target_log_prob of observed_time_series',
+        surrogate_posterior=var_post,
+        optimizer='optimizer',
+        num_steps=200
+    )
+    assert kr is None
+    assert samples == '50 var_post_samples'
+
+    with pytest.raises(ValueError) as excinfo:
+        cimodel.fit_model(model=model, observed_time_series=observed_time_series,
+                          method='test')
+    assert str(excinfo.value) == (
+        'Input method "test" not valid. Choose between "hmc" or "vi".'
+    )

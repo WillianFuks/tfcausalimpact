@@ -14,13 +14,14 @@
 
 
 """
-Main class definition for running causal impact analysis.
+Main class definition for running Causal Impact analysis.
 """
 
 import numpy as np
 import pandas as pd
 import tensorflow_probability as tfp
 import causalimpact.data as cidata
+import causalimpact.model as cimodel
 
 from causalimpact.inferences import Inferences
 from typing import Union, List, Dict, Any, Optional
@@ -112,10 +113,11 @@ class CausalImpact():
 
     Returns
     -------
-      CausalImpact object with inferences, summary and plotting functionalities.
+      Causal Impact object with inferences, summary and plotting functionalities.
 
-    Examples:
-    ---------
+    Examples
+    --------
+
       >>> import numpy as np
       >>> from statsmodels.tsa.statespace.structural import UnobservedComponents
       >>> from statsmodels.tsa.arima_process import ArmaProcess
@@ -209,122 +211,24 @@ class CausalImpact():
         structural components that were used for building the model (such as local level
         factor or seasonal components).
         """
-        fit_args = self._process_fit_args()
-        self.trained_model = self.model.fit(**fit_args)
+        observed_time_series = (
+            self.pre_data if self.normed_pre_data is None else self.normed_pre_data
+        )
+        # if operation `iloc` returns a pd.Series cast it back to pd.DataFrame
+        observed_time_series = pd.DataFrame(observed_time_series.iloc[:, 0])
+        model_samples, model_kernel_results = cimodel.fit_model(
+            self.model,
+            observed_time_series,
+            self.model_args['fit_method'],
+            self.model_args['niter']
+        )
+        self.model_samples = model_samples
+        self.model_kernel_results = model_kernel_results
 
     def _process_posterior_inferences(self):
         """
-        Uses the trained model to make predictions for the post-intervention (or test
-        data) period by invoking the class `Inferences` to process the forecasts. All
-        data related to predictions, point effects and cumulative responses will be
-        processed here.
+        Run `inferrer` to process data forecasts and predictions. Results feeds the
+        summary table as well as the plotting functionality.
         """
         self._compile_posterior_inferences()
         self._summarize_posterior_inferences()
-
-    def _get_default_model(self):
-        """Constructs default local level unobserved states model using input data and
-        `self.model_args`.
-
-        Returns
-        -------
-          model: `UnobservedComponents` built using pre-intervention data as training
-              data.
-        """
-        data = self.pre_data if self.normed_pre_data is None else self.normed_pre_data
-        y = data.iloc[:, 0]
-        X = data.iloc[:, 1:] if data.shape[1] > 1 else None
-        freq_seasonal = self.model_args.get('nseasons')
-        # model = UnobservedComponents(endog=y, level='llevel', exog=X,
-                                     # freq_seasonal=freq_seasonal)
-        # return model
-
-
-    def _process_fit_args(self):
-        """
-        Process the input that will be used in the fitting process for the model.
-
-        Args
-        ----
-          self:
-            model: 
-                If `None` them it means the fitting process will work with default model.
-                Process level information of customized model otherwise.
-            model_args: dict.
-                Input args for general options of the model. All keywords defined
-                in `scipy.optimize.minimize` can be used here. For more details,
-                please refer to:
-                https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.minimize.html
-
-              disp: bool.
-                  Whether to display the logging of the `statsmodels` fitting process or
-                  not. Defaults to `False` which means not display any logging.
-
-              prior_level_sd: float.
-                  Prior value to be used as reference for the fitting process.
-
-        Returns
-        -------
-          model_args: dict
-              The arguments that will be used in the `fit` method.
-        """
-        fit_args = self.model_args.copy()
-        fit_args.setdefault('disp', False)
-        level_sd = fit_args.get('prior_level_sd', 0.01)
-        n_params = len(self.model.param_names)
-        level_idx = [idx for (idx, name) in enumerate(self.model.param_names) if
-                     name == 'sigma2.level']
-        bounds = [(None, None)] * n_params
-        if level_idx:  # If chosen model do not have level defined then this is None.
-            level_idx = level_idx[0]
-            # We make the maximum relative variation be up to 20% in order to simulate
-            # an approximate behavior of the respective algorithm implemented in R.
-            bounds[level_idx] = (
-                level_sd / 1.2 if level_sd is not None else None,
-                level_sd * 1.2 if level_sd is not None else None
-            )
-        fit_args.setdefault('bounds', bounds)
-        return fit_args
-
-
-
-
-    def _format_input_data(self, data):
-        """
-        Validates and formats input data.
-
-        Args
-        ----
-          data: Union[np.array, pd.DataFrame]
-
-        Returns
-        -------
-          data: pd.DataFrame
-              Validated data to be used in Causal Impact algorithm.
-
-        Raises
-        ------
-          ValueError: if input `data` is non-convertible to pandas DataFrame.
-                      if input `data` has non-numeric values.
-                      if input `data` has less than 3 points.
-                      if input covariates have NAN values.
-        """
-        if not isinstance(data, pd.DataFrame):
-            try:
-                data = pd.DataFrame(data)
-            except ValueError:
-                raise ValueError(
-                    'Could not transform input data to pandas DataFrame.'
-                )
-        self._validate_y(data.iloc[:, 0])
-        # Must contain only numeric values
-        if not data.applymap(np.isreal).values.all():
-            raise ValueError('Input data must contain only numeric values.')
-        # Covariates cannot have NAN values
-        if data.shape[1] > 1:
-            if data.iloc[:, 1:].isna().values.any():
-                raise ValueError('Input data cannot have NAN values.')
-        # If index is a string of dates, try to convert it to datetimes which helps
-        # in plotting.
-        data = self._convert_index_to_datetime(data)
-        return data
