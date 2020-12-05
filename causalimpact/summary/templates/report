@@ -1,0 +1,81 @@
+{% set detected_sig = not (summary.average.rel_effect_lower < 0 and summary.average.rel_effect_upper > 0) -%}
+{% set positive_sig = summary.average.rel_effect > 0 -%}
+{% macro CI(alpha) %}{{(((1 - alpha) * 100) | string).rstrip('0').rstrip('.')}}%{% endmacro -%}
+Analysis report {CausalImpact}
+
+
+During the post-intervention period, the response variable had
+an average value of approx. {{summary.average.actual | round(digits)}}. {% if detected_sig -%}By contrast, in{% else %}In{% endif %} the absence of an
+intervention, we would have expected an average response of {{summary.average.predicted | round(digits)}}.
+The {{CI(alpha)}} interval of this counterfactual prediction is [{{summary.average.predicted_lower | round(digits)}}, {{summary.average.predicted_upper | round(digits)}}].
+Subtracting this prediction from the observed response yields
+an estimate of the causal effect the intervention had on the
+response variable. This effect is {{summary.average.abs_effect | round(digits)}} with a {{CI(alpha)}} interval of
+{{[summary.average.abs_effect_lower | round(digits), summary.average.abs_effect_upper | round(digits)] | sort}}. For a discussion of the significance of this effect,
+see below.
+
+
+Summing up the individual data points during the post-intervention
+period (which can only sometimes be meaningfully interpreted), the
+response variable had an overall value of {{summary.cumulative.actual | round(digits)}}.
+{% if detected_sig %}By contrast, had{% else %}Had{% endif %} the intervention not taken place, we would have expected
+a sum of {{summary.cumulative.predicted| round(digits)}}. The {{CI(alpha)}} interval of this prediction is {{[summary.cumulative.predicted_lower | round(digits), summary.cumulative.predicted_upper | round(digits)]|sort}}.
+
+
+The above results are given in terms of absolute numbers. In relative
+terms, the response variable showed {% if positive_sig %}an increase of +{% else %}a decrease of {% endif %}{{(100 * summary.average.rel_effect) | round(digits)}}%. The {{CI(alpha)}}
+interval of this percentage is [{{([(100 * summary.average.rel_effect_lower) | round(digits), (100 * summary.average.rel_effect_upper) | round(digits)] | min)}}%, {{([(100 * summary.average.rel_effect_upper) | round(digits), (100 * summary.average.rel_effect_lower) | round(digits)] | max)}}%].
+{% if detected_sig and positive_sig %}
+
+This means that the positive effect observed during the intervention
+period is statistically significant and unlikely to be due to random
+fluctuations. It should be noted, however, that the question of whether
+this increase also bears substantive significance can only be answered
+by comparing the absolute effect ({{summary.average.abs_effect | round(digits)}}) to the original goal
+of the underlying intervention.
+{% elif detected_sig and not positive_sig %}
+
+This means that the negative effect observed during the intervention
+period is statistically significant.
+If the experimenter had expected a positive effect, it is recommended
+to double-check whether anomalies in the control variables may have
+caused an overly optimistic expectation of what should have happened
+in the response variable in the absence of the intervention.
+{% elif not detected_sig and positive_sig %}
+
+This means that, although the intervention appears to have caused a
+positive effect, this effect is not statistically significant when
+considering the entire post-intervention period as a whole. Individual
+days or shorter stretches within the intervention period may of course
+still have had a significant effect, as indicated whenever the lower
+limit of the impact time series (lower plot) was above zero.
+{% elif not detected_sig and not positive_sig -%}
+
+This means that, although it may look as though the intervention has
+exerted a negative effect on the response variable when considering
+the intervention period as a whole, this effect is not statistically
+significant and so cannot be meaningfully interpreted.
+{% endif %}
+{%- if not detected_sig %}
+
+The apparent effect could be the result of random fluctuations that
+are unrelated to the intervention. This is often the case when the
+intervention period is very long and includes much of the time when
+the effect has already worn off. It can also be the case when the
+intervention period is too short to distinguish the signal from the
+noise. Finally, failing to find a significant effect can happen when
+there are not enough control variables or when these variables do not
+correlate well with the response variable during the learning period.
+{% endif %}
+{%- if p_value < alpha %}
+
+The probability of obtaining this effect by chance is very small
+(Bayesian one-sided tail-area probability p = {{p_value | round(digits)}}).
+This means the causal effect can be considered statistically
+significant.
+{%- else %}
+
+The probability of obtaining this effect by chance is p = {{(p_value * 100) | round(digits)}}%.
+This means the effect may be spurious and would generally not be
+considered statistically significant.
+{%- endif -%}

@@ -1,4 +1,6 @@
 mock
+jinja2
+tensorflow==2.3.0
 tensorflow-probability
 pytest
 pytest-cov

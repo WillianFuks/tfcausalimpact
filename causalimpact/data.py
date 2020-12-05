@@ -53,6 +53,8 @@ def process_input_data(
       model_args: Dict[str, Any]
           Sets general variables for building and running the state space model. Possible
           values are:
+            niter: int
+                Number of samples to draw from posterior `P(z | y)`.
             standardize: bool
                 If `True`, standardizes data to have zero mean and unitary standard
                 deviation.
@@ -111,20 +113,17 @@ def process_input_data(
     """
     locals_ = locals()
     none_args = [arg for arg in locals_ if locals_[arg] is None and arg != 'model']
-
     if none_args:
         raise ValueError(
             f'{", ".join(none_args)} '
             f'input argument{"s" if len(none_args) > 1 else ""} cannot be empty'
         )
-
     processed_data = format_input_data(data)
     pre_data, post_data = process_pre_post_data(processed_data, pre_period, post_period)
     alpha = process_alpha(alpha)
     model_args = cimodel.process_model_args(model_args if model_args else {})
     normed_data = (standardize_pre_and_post_data(pre_data, post_data) if
                    model_args['standardize'] else (None, None, None))
-
     if model:
         cimodel.check_input_model(model, pre_data, post_data)
     else:
@@ -246,7 +245,6 @@ def process_pre_post_data(
     """
     checked_pre_period = process_period(pre_period, data)
     checked_post_period = process_period(post_period, data)
-
     if checked_pre_period[1] > checked_post_period[0]:
         raise ValueError(
             'Values in training data cannot be present in the post-intervention '
@@ -263,7 +261,6 @@ def process_pre_post_data(
         raise ValueError(f'post_period first value ({post_period[0]}) must '
                          'be bigger than the second value of pre_period '
                          f'({pre_period[1]}).')
-
     result = [
         data.loc[pre_period[0]: pre_period[1], :],
         data.loc[post_period[0]: post_period[1], :]

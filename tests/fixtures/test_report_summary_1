@@ -1,0 +1,47 @@
+Analysis report {CausalImpact}
+
+
+During the post-intervention period, the response variable had
+an average value of approx. 5.12. In the absence of an
+intervention, we would have expected an average response of 4.23.
+The 90% interval of this counterfactual prediction is [3.12, 6.23].
+Subtracting this prediction from the observed response yields
+an estimate of the causal effect the intervention had on the
+response variable. This effect is 3.12 with a 90% interval of
+[2.23, 6.12]. For a discussion of the significance of this effect,
+see below.
+
+
+Summing up the individual data points during the post-intervention
+period (which can only sometimes be meaningfully interpreted), the
+response variable had an overall value of 10.46.
+Had the intervention not taken place, we would have expected
+a sum of 9.57. The 90% interval of this prediction is [8.46, 9.57].
+
+
+The above results are given in terms of absolute numbers. In relative
+terms, the response variable showed an increase of +41.0%. The 90%
+interval of this percentage is [-30.0%, 30.0%].
+
+
+This means that, although the intervention appears to have caused a
+positive effect, this effect is not statistically significant when
+considering the entire post-intervention period as a whole. Individual
+days or shorter stretches within the intervention period may of course
+still have had a significant effect, as indicated whenever the lower
+limit of the impact time series (lower plot) was above zero.
+
+
+The apparent effect could be the result of random fluctuations that
+are unrelated to the intervention. This is often the case when the
+intervention period is very long and includes much of the time when
+the effect has already worn off. It can also be the case when the
+intervention period is too short to distinguish the signal from the
+noise. Finally, failing to find a significant effect can happen when
+there are not enough control variables or when these variables do not
+correlate well with the response variable during the learning period.
+
+
+The probability of obtaining this effect by chance is p = 50.0%.
+This means the effect may be spurious and would generally not be
+considered statistically significant.

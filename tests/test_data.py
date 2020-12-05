@@ -23,11 +23,6 @@ import tensorflow_probability as tfp
 import causalimpact.data as cidata
 
 
-# from numpy.testing import assert_array_equal
-# from pandas.core.indexes.range import RangeIndex
-# from pandas.util.testing import assert_frame_equal
-
-
 def test_format_input_data(rand_data):
     data = cidata.format_input_data(rand_data)
     pd.testing.assert_frame_equal(data, rand_data)

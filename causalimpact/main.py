@@ -22,17 +22,10 @@ import pandas as pd
 import tensorflow_probability as tfp
 import causalimpact.data as cidata
 import causalimpact.model as cimodel
-
-from causalimpact.inferences import Inferences
+import causalimpact.inferences as inferrer
+import causalimpact.summary as summarizer
+# import causalimpact.plot as plotter
 from typing import Union, List, Dict, Any, Optional
-# from causalimpact.misc import standardize
-from causalimpact.plot import Plot
-from causalimpact.summary import Summary
-
-# distributions module is available on __init__.py or in path
-# `tensorflow_probability.python.distributions` that's why it's required to be brought
-# from `tfp` otherwise Python can't see it.
-tfd = tfp.distributions
 
 
 class CausalImpact():
@@ -183,14 +176,10 @@ class CausalImpact():
         post_period: Union[List[int], List[str], List[pd.Timestamp]],
         model: Optional[tfp.sts.StructuralTimeSeries] = None,
         model_args: Dict[str, Any] = {},
-        alpha: float = 0.05,
-        **kwargs: Dict[str, Any]
+        alpha: float = 0.05
     ):
         processed_input = cidata.process_input_data(data, pre_period, post_period,
-                                                    model, model_args, alpha, **kwargs)
-        self.inferrer = Inferences(n_sims=kwargs.get('n_sims', 1000))
-        self.summarizer = Summary()
-        self.plotter = Plot()
+                                                    model, model_args, alpha)
         self.data = data
         self.pre_period = processed_input['pre_period']
         self.post_period = processed_input['post_period']
@@ -201,9 +190,43 @@ class CausalImpact():
         self.model = processed_input['model']
         self.normed_pre_data = processed_input['normed_pre_data']
         self.normed_post_data = processed_input['normed_post_data']
-        self.mu_sig = processed_input['processed_input']
+        self.mu_sig = processed_input['mu_sig']
         self._fit_model()
-        # self._process_posterior_inferences()
+        self._process_posterior_inferences()
+        self._summarize_inferences()
+
+    def summary(self, output: str = 'summary', digits: int = 2) -> str:
+        """
+        Builds and prints the summary report.
+
+        Args
+        ----
+          output: str
+              Can be either "summary" or "report". The first is a simpler output just
+              informing general metrics such as expected absolute or relative effect.
+          digits: int
+              Defines the number of digits after the decimal point to round. For
+              `digits=2`, value 1.566 becomes 1.57.
+
+        Returns
+        -------
+          summary: str
+              Contains results of the causal impact analysis.
+
+        Raises
+        ------
+          ValueError: If input `output` is not either 'summary' or 'report'.
+                      If input `digits` is not of type integer.
+        """
+        if not isinstance(digits, int):
+            raise ValueError(
+                f'Input value for digits must be integer. Received "{type(digits)}" '
+                'instead.'
+            )
+        result = summarizer.summary(self.summary_data, self.p_value, self.alpha,
+                                    output, digits)
+        print(result)
+        return result
 
     def _fit_model(self) -> None:
         """
@@ -211,24 +234,57 @@ class CausalImpact():
         structural components that were used for building the model (such as local level
         factor or seasonal components).
         """
+        # type must be cast to `np.float32` as the linear regressor from tensorflow only
+        # works with 32 bytes.
         observed_time_series = (
             self.pre_data if self.normed_pre_data is None else self.normed_pre_data
-        )
+        ).astype(np.float32)
         # if operation `iloc` returns a pd.Series cast it back to pd.DataFrame
         observed_time_series = pd.DataFrame(observed_time_series.iloc[:, 0])
         model_samples, model_kernel_results = cimodel.fit_model(
             self.model,
             observed_time_series,
             self.model_args['fit_method'],
-            self.model_args['niter']
         )
         self.model_samples = model_samples
         self.model_kernel_results = model_kernel_results
 
+    def _summarize_inferences(self):
+        """
+        After processing predictions and forecasts, use these values to build the
+        summary data used for reporting and plotting. Computes the estimated p-value
+        for determining if the impact is statistically significant or not.
+        """
+        post_preds_means = self.inferences['post_preds_means']
+        post_data_sum = self.post_data.iloc[:, 0].sum()
+        niter = self.model_args['niter']
+        simulated_ys = self.posterior_dist.sample(niter)
+        self.summary_data = inferrer.summarize_posterior_inferences(post_preds_means,
+                                                                    self.post_data,
+                                                                    simulated_ys,
+                                                                    self.alpha)
+        self.p_value = inferrer.compute_p_value(simulated_ys, post_data_sum)
+
     def _process_posterior_inferences(self):
         """
         Run `inferrer` to process data forecasts and predictions. Results feeds the
-        summary table as well as the plotting functionality.
+        summary table as well as the plotting functionalities.
         """
-        self._compile_posterior_inferences()
-        self._summarize_posterior_inferences()
+        observed_time_series = self.post_data.iloc[:, 0].astype(np.float32)
+        num_steps_forecast = len(self.post_data)
+        self.one_step_dist = cimodel.build_one_step_dist(self.model,
+                                                         observed_time_series,
+                                                         self.model_samples)
+        self.posterior_dist = cimodel.build_posterior_dist(self.model,
+                                                           observed_time_series,
+                                                           self.model_samples,
+                                                           num_steps_forecast)
+        self.inferences = inferrer.compile_posterior_inferences(
+            self.pre_data,
+            self.post_data,
+            self.one_step_dist,
+            self.posterior_dist,
+            self.mu_sig,
+            self.alpha,
+            self.model_args['niter']
+        )

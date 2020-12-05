@@ -42,6 +42,8 @@ def process_model_args(model_args: Dict[str, Any]) -> Dict[str, Any]:
     Args
     ----
       model_args:
+        niter: int
+            How many iterations to run either for `hmc` or `vi` algorithms.
         standardize: bool
             If `True`, standardize data so result has zero mean and unitary standard
             deviation.
@@ -58,9 +60,7 @@ def process_model_args(model_args: Dict[str, Any]) -> Dict[str, Any]:
             either `hmc` which stands for "Hamiltonian Monte Carlo" or "vi", i.e.,
             "variational inference". The first is slower but more accurate whilst the
             latter is the opposite. Defaults to `hmc` which prioritizes accuracy.
-        niter: int
-            How many iterations to run either for `hmc` or `vi` algorithms.
-        nseasons: int
+       nseasons: int
             Specifies the duration of the period of the seasonal component; if input
             data is specified in terms of days, then choosing nseasons=7 adds a weekly
             seasonal effect.
@@ -121,7 +121,6 @@ def process_model_args(model_args: Dict[str, Any]) -> Dict[str, Any]:
         raise ValueError('nseasons must be bigger than 1 when season_duration is also '
                          'bigger than 1.')
     model_args['season_duration'] = season_duration
-
     return model_args
 
 
@@ -326,6 +325,67 @@ def fit_model(
         raise ValueError(
             f'Input method "{method}" not valid. Choose between "hmc" or "vi".'
         )
+
+
+def build_one_step_dist(
+    model: tfp.sts.StructuralTimeSeries,
+    observed_time_series: pd.DataFrame,
+    parameter_samples: Union[List[tfd.Distribution], Dict[str, tfd.Distribution]]
+) -> tfd.Distribution:  # pragma: no cover
+    """
+    Builds one step distribution for pre-intervention data given samples from the
+    posterior `P(z | y)`.
+
+    Args
+    ----
+      model: tfp.StructuralTimeSeries
+      observed_time_series: pd.DataFrame
+          Corresponds to the `y` value.
+      parameter_samples: Union[List[tfd.Distribution], Dict[str, tfd.Distribution]]
+          samples from the posterior for each state component in `model`.
+
+    Returns
+    -------
+      one_step_dist: tfd.Distribution
+    """
+    return tfp.sts.one_step_predictive(
+        model=model,
+        observed_time_series=observed_time_series,
+        parameter_samples=parameter_samples
+    )
+
+
+def build_posterior_dist(
+    model: tfp.sts.StructuralTimeSeries,
+    observed_time_series: pd.DataFrame,
+    parameter_samples: Union[List[tfd.Distribution], Dict[str, tfd.Distribution]],
+    num_steps_forecast: int
+) -> tfd.Distribution:  # pragma: no cover
+    """
+    Builds the distribution for post-intervention data given samples from the
+    posterior `P(z | y)`.
+
+    Args
+    ----
+      model: tfp.StructuralTimeSeries
+      observed_time_series: pd.DataFrame
+          Corresponds to the `y` value.
+      parameter_samples: Union[List[tfd.Distribution], Dict[str, tfd.Distribution]]
+          samples from the posterior for each state component in `model`.
+      num_steps_forecast: int
+          How many time steps to forecast into the future. These will be compared against
+          the real value of `y` to extract the estimation of impact.
+
+    Returns
+    -------
+      posterior_dist: tfd.Distribution
+    """
+    return tfp.sts.forecast(
+        model=model,
+        observed_time_series=observed_time_series,
+        parameter_samples=parameter_samples,
+        num_steps_forecast=num_steps_forecast
+    )
 
 
 class SquareRootBijector(tfb.Bijector):
