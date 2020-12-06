@@ -45,7 +45,7 @@ def test_process_model_args():
     assert model_args['niter'] == 10
 
     model_args = cimodel.process_model_args({})
-    assert model_args['niter'] == 100
+    assert model_args['niter'] == 1000
 
     with pytest.raises(ValueError) as excinfo:
         cimodel.process_model_args(dict(niter='yes'))

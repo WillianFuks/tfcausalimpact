@@ -130,7 +130,9 @@ def process_input_data(
         model = cimodel.build_default_model(
             normed_data[0] if model_args['standardize'] else pre_data,
             normed_data[1] if model_args['standardize'] else post_data,
-            model_args['prior_level_sd']
+            model_args['prior_level_sd'],
+            model_args['nseasons'],
+            model_args['season_duration']
         )
     return {
         'data': processed_data,

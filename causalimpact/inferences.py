@@ -14,8 +14,8 @@
 
 
 """
-Uses the posterior distribution to prepare inferences for the Causal Impact summary
-and plotting functionalities.
+Uses the posterior distribution to prepare inferences for the Causal Impact summary and
+plotting functionalities.
 """
 
 
@@ -26,7 +26,7 @@ import tensorflow as tf
 
 from typing import List, Tuple, Optional, Union
 
-from causalimpact.misc import get_z_score, unstandardize
+from causalimpact.misc import get_z_score, maybe_unstandardize
 
 
 tfd = tfp.distributions
@@ -48,36 +48,6 @@ def get_lower_upper_percentiles(alpha: float) -> List[float]:
           First value is the lower quantile and second value is upper.
     """
     return [alpha * 100. / 2., 100 - alpha * 100. / 2.]
-
-
-def maybe_unstardardize(
-    data: pd.DataFrame,
-    mu_sig: Optional[Tuple[float, float]] = None
-) -> pd.DataFrame:
-    """
-    If input data was standardized this method is used to bring back data to its
-    original values. The parameter `mu_sig` from holds the values used for
-    standardizing (average and std, respectively) the response variable `y`. In case
-    `mu_sig` is `None`, it means no standardization was applied; in this case, we
-    just return data itself.
-
-    Args
-    ----
-      mu_sig: Tuple[float, float]
-            First value is the mean and second is the standard deviation used for
-            normalizing the response variable `y`.
-      data: pd.DataFrame
-          Input dataframe to apply unstardization.
-
-    Returns
-    -------
-      pd.DataFrame
-          returns original input `data` if `mu_sig` is None and the "unstardardized"
-          data otherwise.
-    """
-    if mu_sig is None:
-        return data
-    return unstandardize(data, mu_sig)
 
 
 def compile_posterior_inferences(
@@ -126,25 +96,26 @@ def compile_posterior_inferences(
     # when computing the cumulative inferences. Without this value the plotting of
     # cumulative data breaks at the initial point
     zero_series = pd.Series([0])
-    simulated_ys = posterior_dist.sample(niter)  # shape (n_sims, n_forecasts, 1)
+    simulated_ys = posterior_dist.sample(niter)  # shape (niter, n_forecasts, 1)
+    simulated_ys = np.squeeze(simulated_ys.numpy())  # shape (niter, n_forecasts)
     # pre inference
     pre_preds_means = one_step_dist.mean()
     pre_preds_stds = one_step_dist.stddev()
     pre_preds_lower = pd.Series(
         np.squeeze(
-            maybe_unstardardize(pre_preds_means - z_score * pre_preds_stds, mu_sig)
+            maybe_unstandardize(pre_preds_means - z_score * pre_preds_stds, mu_sig)
         ),
         index=pre_data.index
     )
     pre_preds_upper = pd.Series(
         np.squeeze(
-            maybe_unstardardize(pre_preds_means + z_score * pre_preds_stds, mu_sig)
+            maybe_unstandardize(pre_preds_means + z_score * pre_preds_stds, mu_sig)
         ),
         index=pre_data.index
     )
     pre_preds_means = pd.Series(
         np.squeeze(
-            maybe_unstardardize(pre_preds_means, mu_sig)
+            maybe_unstandardize(pre_preds_means, mu_sig)
         ),
         index=pre_data.index
     )
@@ -153,7 +124,7 @@ def compile_posterior_inferences(
     post_preds_stds = posterior_dist.stddev()
     post_preds_lower = pd.Series(
         np.squeeze(
-            maybe_unstardardize(
+            maybe_unstandardize(
                 post_preds_means - z_score * post_preds_stds,
                 mu_sig
             )
@@ -162,7 +133,7 @@ def compile_posterior_inferences(
     )
     post_preds_upper = pd.Series(
         np.squeeze(
-            maybe_unstardardize(
+            maybe_unstandardize(
                 post_preds_means + z_score * post_preds_stds,
                 mu_sig
             )
@@ -171,7 +142,7 @@ def compile_posterior_inferences(
     )
     post_preds_means = pd.Series(
         np.squeeze(
-            maybe_unstardardize(post_preds_means, mu_sig)
+            maybe_unstandardize(post_preds_means, mu_sig)
         ),
         index=post_data.index
     )

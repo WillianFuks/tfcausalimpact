@@ -52,8 +52,14 @@ def test_process_pre_post_data(rand_data, date_rand_data):
         date_rand_data,
         ['20200101', '20200110'], ['20200111', '20200120']
     )
-    pd.testing.assert_frame_equal(pre_data, date_rand_data.iloc[0:10, :])
-    pd.testing.assert_frame_equal(post_data, date_rand_data.iloc[10:20, :])
+    pd.testing.assert_frame_equal(
+        pre_data,
+        date_rand_data.loc['20200101': '20200110', :]
+    )
+    pd.testing.assert_frame_equal(
+        post_data,
+        date_rand_data.loc['20200111': '20200120', :]
+    )
 
     with pytest.raises(ValueError) as excinfo:
         cidata.process_pre_post_data(rand_data, [5, 10], [4, 7])
@@ -271,7 +277,6 @@ def test_process_input_data(rand_data, pre_int_period, post_int_period, date_ran
             results['post_data'],
             cur_data.loc[cur_post_period[0]: cur_post_period[1], :]
         )
-
         np.testing.assert_almost_equal(
             results['normed_pre_data'].mean().values,
             np.array([0, 0, 0])
@@ -281,7 +286,6 @@ def test_process_input_data(rand_data, pre_int_period, post_int_period, date_ran
             np.array([1, 1, 1]),
             decimal=2
         )
-
         assert isinstance(results['model'], tfp.sts.StructuralTimeSeries)
         assert results['model_args'] == {
             'standardize': True,
@@ -292,19 +296,16 @@ def test_process_input_data(rand_data, pre_int_period, post_int_period, date_ran
             'fit_method': 'hmc'
         }
         assert results['alpha'] == 0.05
-
         # tests user input model setting
         model = tfp.sts.LocalLevel()
         results = cidata.process_input_data(cur_data, cur_pre_period, cur_post_period,
                                             model, {}, 0.05)
         assert isinstance(results['model'], tfp.sts.LocalLevel)
-
         # test normalization of data not set
         results = cidata.process_input_data(cur_data, cur_pre_period, cur_post_period,
                                             None, {'standardize': False}, 0.05)
         assert results['normed_pre_data'] is None
         assert results['normed_post_data'] is None
-
     # test Exceptions
     with pytest.raises(ValueError) as excinfo:
         cidata.process_input_data(None, pre_int_period, post_int_period, None, {},
@@ -322,7 +323,6 @@ def test_process_input_data(rand_data, pre_int_period, post_int_period, date_ran
     with pytest.raises(ValueError) as excinfo:
         cidata.process_input_data(None, None, post_int_period, None, {}, 0.05)
     assert str(excinfo.value) == 'data, pre_period input arguments cannot be empty'
-
     # testing calls
     format_input_data_mock = mock.Mock()
     format_input_data_mock.return_value = 'processed_data'

@@ -225,7 +225,6 @@ class CausalImpact():
             )
         result = summarizer.summary(self.summary_data, self.p_value, self.alpha,
                                     output, digits)
-        print(result)
         return result
 
     def _fit_model(self) -> None:
@@ -239,7 +238,7 @@ class CausalImpact():
         observed_time_series = (
             self.pre_data if self.normed_pre_data is None else self.normed_pre_data
         ).astype(np.float32)
-        # if operation `iloc` returns a pd.Series cast it back to pd.DataFrame
+        # if operation `iloc` returns a pd.Series, cast it back to pd.DataFrame
         observed_time_series = pd.DataFrame(observed_time_series.iloc[:, 0])
         model_samples, model_kernel_results = cimodel.fit_model(
             self.model,
@@ -258,7 +257,7 @@ class CausalImpact():
         post_preds_means = self.inferences['post_preds_means']
         post_data_sum = self.post_data.iloc[:, 0].sum()
         niter = self.model_args['niter']
-        simulated_ys = self.posterior_dist.sample(niter)
+        simulated_ys = np.squeeze(self.posterior_dist.sample(niter).numpy())
         self.summary_data = inferrer.summarize_posterior_inferences(post_preds_means,
                                                                     self.post_data,
                                                                     simulated_ys,
@@ -270,13 +269,17 @@ class CausalImpact():
         Run `inferrer` to process data forecasts and predictions. Results feeds the
         summary table as well as the plotting functionalities.
         """
-        observed_time_series = self.post_data.iloc[:, 0].astype(np.float32)
+        observed_time_series = (
+            self.pre_data if self.normed_pre_data is None else self.normed_pre_data
+        ).astype(np.float32)
+        self.observed_time_series = pd.DataFrame(observed_time_series.iloc[:, 0])
+
         num_steps_forecast = len(self.post_data)
         self.one_step_dist = cimodel.build_one_step_dist(self.model,
-                                                         observed_time_series,
+                                                         self.observed_time_series,
                                                          self.model_samples)
         self.posterior_dist = cimodel.build_posterior_dist(self.model,
-                                                           observed_time_series,
+                                                           self.observed_time_series,
                                                            self.model_samples,
                                                            num_steps_forecast)
         self.inferences = inferrer.compile_posterior_inferences(

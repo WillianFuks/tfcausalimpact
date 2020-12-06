@@ -99,7 +99,7 @@ def process_model_args(model_args: Dict[str, Any]) -> Dict[str, Any]:
         raise ValueError('prior_level_sd argument must be of type float.')
     model_args['prior_level_sd'] = prior_level_sd
 
-    niter = model_args.get('niter', 100)
+    niter = model_args.get('niter', 1000)
     if not isinstance(niter, int):
         raise ValueError('niter argument must be of type int.')
     model_args['niter'] = niter
@@ -186,7 +186,9 @@ def check_input_model(
 def build_default_model(
     pre_data: pd.DataFrame,
     post_data: pd.DataFrame,
-    prior_level_sd: float
+    prior_level_sd: float,
+    nseasons: int,
+    season_duration: int
 ) -> tfp.sts.StructuralTimeSeries:
     """
     When input model is `None` then proceeds to build a default `tfp.sts.LocalLevel`
@@ -206,12 +208,15 @@ def build_default_model(
           Sets an initial estimation for the standard deviation 'sigma' of the local
           level prior. The bigger this value is, the wider is expected to be the random
           walk extension on forecasts.
+      nseasons: int
+      season_duration: int
 
     Returns
     -------
-      model: tfp.sts.StructuralTimeSeries
+      model: tfp.sts.Sum
           A `tfp.sts.LocalLevel` default model with possible another
-          `tfp.sts.LinearRegression` component representing the covariates.
+          `tfp.sts.LinearRegression` and `tfp.sts.Seasonal` components representing
+          covariates and seasonal patterns.
     """
     def _build_inv_gamma_sd_prior() -> tfd.Distribution:
         """
@@ -233,27 +238,37 @@ def build_default_model(
         new_dist = tfd.TransformedDistribution(dist, bijector)
         return new_dist
 
+    components = []
+    observed_time_series = pre_data.iloc[:, 0].astype(np.float32)
     sd_prior = _build_inv_gamma_sd_prior()
     sd_prior = _build_bijector(sd_prior)
     level_component = tfp.sts.LocalLevel(
         level_scale_prior=sd_prior,
-        observed_time_series=pre_data.iloc[:, 0].astype(np.float32)
+        observed_time_series=observed_time_series
     )
-    # if it has more than 1 column then it has covariates X; add a linear regressor
-    # component then.
+    components.append(level_component)
+    # if it has more than 1 column then it has covariates X so add a linear regressor
+    # component
     if len(pre_data.columns) > 1:
         # we need to concatenate both pre and post data as this will allow the linear
         # regressor component to use the post data when running forecasts. As first
         # column is supposed to have response variable `y` then we filter out just the
-        # remaining columns for the `X` value.
+        # remaining columns for the `X` value
         complete_data = pd.concat([pre_data, post_data]).astype(np.float32)
-        linear_reg = tfp.sts.LinearRegression(design_matrix=complete_data.iloc[:, 1:])
-        model = tfp.sts.Sum(
-            [level_component, linear_reg],
-            observed_time_series=pre_data.iloc[:, 0].astype(np.float32)
+        linear_component = tfp.sts.LinearRegression(
+            design_matrix=complete_data.iloc[:, 1:]
         )
-    else:
-        model = level_component
+        components.append(linear_component)
+    if nseasons > 1:
+        seasonal_component = tfp.sts.Seasonal(
+            num_seasons=nseasons,
+            num_steps_per_season=season_duration,
+            observed_time_series=observed_time_series
+        )
+        components.append(seasonal_component)
+    # Model must be built with `tfp.sts.Sum` so to add the observed noise `epsilon`
+    # parameter
+    model = tfp.sts.Sum(components, observed_time_series=observed_time_series)
     return model
 
 
@@ -302,12 +317,10 @@ def fit_model(
     elif method == 'vi':
         optimizer = tf.optimizers.Adam(learning_rate=0.1)
         variational_steps = 200  # Hardcoded for now
+        variational_posteriors = tfp.sts.build_factored_surrogate_posterior(model=model)
 
         @tf.function()
         def _run_vi():  # pragma: no cover
-            variational_posteriors = tfp.sts.build_factored_surrogate_posterior(
-                model=model
-            )
             tfp.vi.fit_surrogate_posterior(
                 target_log_prob_fn=model.joint_log_prob(
                     observed_time_series=observed_time_series
@@ -318,7 +331,7 @@ def fit_model(
             )
             # Don't sample too much as varitional inference method is built aiming for
             # performance first.
-            samples = variational_posteriors.sample(50)
+            samples = variational_posteriors.sample(100)
             return samples, None
         return _run_vi()
     else:

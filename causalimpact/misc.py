@@ -16,7 +16,7 @@
 """Miscellaneous functions to help in the implementation of Causal Impact."""
 
 
-from typing import Tuple
+from typing import Tuple, Optional
 
 import scipy.stats as stats
 import pandas as pd
@@ -73,6 +73,36 @@ def unstandardize(data: pd.DataFrame, mus_sigs: Tuple[float, float]) -> pd.DataF
     mu, sig = mus_sigs
     data = (data * sig) + mu
     return data
+
+
+def maybe_unstandardize(
+    data: pd.DataFrame,
+    mu_sig: Optional[Tuple[float, float]] = None
+) -> pd.DataFrame:
+    """
+    If input data was standardized this method is used to bring back data to its
+    original values. The parameter `mu_sig` from holds the values used for
+    standardizing (average and std, respectively) the response variable `y`. In case
+    `mu_sig` is `None`, it means no standardization was applied; in this case, we
+    just return data itself.
+
+    Args
+    ----
+      mu_sig: Tuple[float, float]
+            First value is the mean and second is the standard deviation used for
+            normalizing the response variable `y`.
+      data: pd.DataFrame
+          Input dataframe to apply unstardization.
+
+    Returns
+    -------
+      pd.DataFrame
+          returns original input `data` if `mu_sig` is None and the "unstardardized"
+          data otherwise.
+    """
+    if mu_sig is None:
+        return data
+    return unstandardize(data, mu_sig)
 
 
 def get_z_score(p):
