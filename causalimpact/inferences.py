@@ -97,7 +97,10 @@ def compile_posterior_inferences(
     # cumulative data breaks at the initial point
     zero_series = pd.Series([0])
     simulated_ys = posterior_dist.sample(niter)  # shape (niter, n_forecasts, 1)
-    simulated_ys = np.squeeze(simulated_ys.numpy())  # shape (niter, n_forecasts)
+    simulated_ys = maybe_unstandardize(
+        np.squeeze(simulated_ys.numpy()),
+        mu_sig
+    )  # shape (niter, n_forecasts)
     # pre inference
     pre_preds_means = one_step_dist.mean()
     pre_preds_stds = one_step_dist.stddev()

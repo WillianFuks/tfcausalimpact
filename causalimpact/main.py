@@ -26,6 +26,7 @@ import causalimpact.inferences as inferrer
 import causalimpact.summary as summarizer
 # import causalimpact.plot as plotter
 from typing import Union, List, Dict, Any, Optional
+from causalimpact.misc import maybe_unstandardize
 
 
 class CausalImpact():
@@ -257,7 +258,10 @@ class CausalImpact():
         post_preds_means = self.inferences['post_preds_means']
         post_data_sum = self.post_data.iloc[:, 0].sum()
         niter = self.model_args['niter']
-        simulated_ys = np.squeeze(self.posterior_dist.sample(niter).numpy())
+        simulated_ys = maybe_unstandardize(
+            np.squeeze(self.posterior_dist.sample(niter).numpy()),
+            self.mu_sig
+        )
         self.summary_data = inferrer.summarize_posterior_inferences(post_preds_means,
                                                                     self.post_data,
                                                                     simulated_ys,

@@ -86,8 +86,13 @@ def process_model_args(model_args: Dict[str, Any]) -> Dict[str, Any]:
 
     Raises
     ------
-      ValueError: if standardize is not of type `bool`.
-                  if nseasons doesn't follow the pattern [{str key: number}].
+      ValueError: if `standardize` is not of type `bool`.
+                  if `prior_level_sd` is not `float`.
+                  if `niter` is not `int`.
+                  if `fit_method` not in {'hmc', 'vi'}.
+                  if `nseasons` is not `int`.
+                  if `season_duration` is not `int`.
+                  if `season_duration` is bigger than 1 and `nseasons` is 1.
     """
     standardize = model_args.get('standardize', True)
     if not isinstance(standardize, bool):
