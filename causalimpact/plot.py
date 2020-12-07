@@ -58,12 +58,12 @@ def plot(
     idx = 1
     if 'original' in panels:
         ax.plot(pd.concat([pre_data.iloc[:, 0], post_data.iloc[:, 0]]), 'k', label='y')
-        ax.plot(inferences['preds_means'], 'b--', label='Predicted')
+        ax.plot(inferences['complete_preds_means'], 'b--', label='Predicted')
         ax.axvline(inferences.index[intervention_idx - 1], c='k', linestyle='--')
         ax.fill_between(
             pre_data.index.union(post_data.index),
-            inferences['preds_lower'],
-            inferences['preds_upper'],
+            inferences['complete_preds_lower'],
+            inferences['complete_preds_upper'],
             facecolor='blue',
             interpolate=True,
             alpha=0.25
@@ -75,10 +75,10 @@ def plot(
         idx += 1
     if 'pointwise' in panels:
         ax = plt.subplot(n_panels, 1, idx, sharex=ax)
-        ax.plot(inferences['point_effects'], 'b--', label='Point Effects')
+        ax.plot(inferences['point_effects_means'], 'b--', label='Point Effects')
         ax.axvline(inferences.index[intervention_idx - 1], c='k', linestyle='--')
         ax.fill_between(
-            inferences['point_effects'].index,
+            inferences['point_effects_means'].index,
             inferences['point_effects_lower'],
             inferences['point_effects_upper'],
             facecolor='blue',
@@ -93,11 +93,11 @@ def plot(
         idx += 1
     if 'cumulative' in panels:
         ax = plt.subplot(n_panels, 1, idx, sharex=ax)
-        ax.plot(inferences['post_cum_effects'], 'b--',
+        ax.plot(inferences['post_cum_effects_means'], 'b--',
                 label='Cumulative Effect')
         ax.axvline(inferences.index[intervention_idx - 1], c='k', linestyle='--')
         ax.fill_between(
-            inferences['post_cum_effects'].index,
+            inferences['post_cum_effects_means'].index,
             inferences['post_cum_effects_lower'],
             inferences['post_cum_effects_upper'],
             facecolor='blue',

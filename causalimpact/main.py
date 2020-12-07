@@ -24,7 +24,7 @@ import causalimpact.data as cidata
 import causalimpact.model as cimodel
 import causalimpact.inferences as inferrer
 import causalimpact.summary as summarizer
-# import causalimpact.plot as plotter
+import causalimpact.plot as plotter
 from typing import Union, List, Dict, Any, Optional
 from causalimpact.misc import maybe_unstandardize
 
@@ -195,6 +195,10 @@ class CausalImpact():
         self._fit_model()
         self._process_posterior_inferences()
         self._summarize_inferences()
+
+    def plot(self, panels=['original', 'pointwise', 'cumulative'], figsize=(15, 12)):
+        plotter.plot(self.inferences, self.pre_data, self.post_data, panels=panels,
+                figsize=figsize)
 
     def summary(self, output: str = 'summary', digits: int = 2) -> str:
         """

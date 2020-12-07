@@ -223,7 +223,9 @@ def build_default_model(
           `tfp.sts.LinearRegression` and `tfp.sts.Seasonal` components representing
           covariates and seasonal patterns.
     """
-    def _build_inv_gamma_sd_prior() -> tfd.Distribution:
+    def _build_inv_gamma_sd_prior(
+        sigma_guess: float = prior_level_sd
+    ) -> tfd.Distribution:
         """
         helper function to build the sd_prior distribution for standard deviation
         modeling.
@@ -231,7 +233,7 @@ def build_default_model(
         sample_size = kLocalLevelPriorSampleSize
         df = sample_size
         a = df / 2
-        ss = sample_size * prior_level_sd ** 2
+        ss = sample_size * sigma_guess ** 2
         b = ss / 2
         return tfd.InverseGamma(a, b)
 
@@ -247,6 +249,9 @@ def build_default_model(
     observed_time_series = pre_data.iloc[:, 0].astype(np.float32)
     sd_prior = _build_inv_gamma_sd_prior()
     sd_prior = _build_bijector(sd_prior)
+    obs_prior = _build_inv_gamma_sd_prior(0.5)
+    obs_prior = _build_bijector(obs_prior)
+
     level_component = tfp.sts.LocalLevel(
         level_scale_prior=sd_prior,
         observed_time_series=observed_time_series
@@ -273,7 +278,8 @@ def build_default_model(
         components.append(seasonal_component)
     # Model must be built with `tfp.sts.Sum` so to add the observed noise `epsilon`
     # parameter
-    model = tfp.sts.Sum(components, observed_time_series=observed_time_series)
+    model = tfp.sts.Sum(components, observed_time_series=observed_time_series,
+                        observation_noise_scale_prior=obs_prior)
     return model
 
 
