@@ -42,7 +42,7 @@ def plot(
       RuntimeError: if inferences were not computed yet.
     """
     plt = get_plotter()
-    _ = plt.figure(figsize=figsize)
+    plt.figure(figsize=figsize)
     valid_panels = ['original', 'pointwise', 'cumulative']
     for panel in panels:
         if panel not in valid_panels:
@@ -51,22 +51,38 @@ def plot(
                     panel, ', '.join(['"{}"'.format(e) for e in valid_panels])
                 )
             )
+    pre_post_index = pre_data.index.union(post_data.index)
     post_period_init = post_data.index[0]
-    intervention_idx = inferences.index.get_loc(post_period_init)
+    intervention_idx = pre_post_index.get_loc(post_period_init)
     n_panels = len(panels)
     ax = plt.subplot(n_panels, 1, 1)
     idx = 1
+    color = (1.0, 0.4981, 0.0549)
+    # The operation `iloc[1:]` is used mainly to remove the uncertainty associated to the
+    # predictions of the first points. As the predictions follow
+    # `P(z[t] | y[1...t-1], z[1...t-1])` the very first point ends up being quite noisy
+    # as there's no previous point observed.
     if 'original' in panels:
-        ax.plot(pd.concat([pre_data.iloc[:, 0], post_data.iloc[:, 0]]), 'k', label='y')
-        ax.plot(inferences['complete_preds_means'], 'b--', label='Predicted')
-        ax.axvline(inferences.index[intervention_idx - 1], c='k', linestyle='--')
+        ax.plot(
+            pre_post_index,
+            pd.concat([pre_data.iloc[:, 0], post_data.iloc[:, 0]]),
+            'k',
+            label='y'
+        )
+        ax.plot(
+            pre_post_index[1:],
+            inferences['complete_preds_means'].iloc[1:],
+            color='orangered',
+            ls='dashed',
+            label='Predicted'
+        )
+        ax.axvline(pre_post_index[intervention_idx - 1], c='k', linestyle='--')
         ax.fill_between(
-            pre_data.index.union(post_data.index),
-            inferences['complete_preds_lower'],
-            inferences['complete_preds_upper'],
-            facecolor='blue',
-            interpolate=True,
-            alpha=0.25
+            pre_post_index[1:],
+            inferences['complete_preds_lower'].iloc[1:],
+            inferences['complete_preds_upper'].iloc[1:],
+            color=color,
+            alpha=0.2
         )
         ax.grid(True, linestyle='--')
         ax.legend()
@@ -75,15 +91,20 @@ def plot(
         idx += 1
     if 'pointwise' in panels:
         ax = plt.subplot(n_panels, 1, idx, sharex=ax)
-        ax.plot(inferences['point_effects_means'], 'b--', label='Point Effects')
-        ax.axvline(inferences.index[intervention_idx - 1], c='k', linestyle='--')
+        ax.plot(
+            pre_post_index[1:],
+            inferences['point_effects_means'].iloc[1:],
+            ls='dashed',
+            color='orangered',
+            label='Point Effects'
+        )
+        ax.axvline(pre_post_index[intervention_idx - 1], c='k', linestyle='--')
         ax.fill_between(
-            inferences['point_effects_means'].index,
-            inferences['point_effects_lower'],
-            inferences['point_effects_upper'],
-            facecolor='blue',
-            interpolate=True,
-            alpha=0.25
+            pre_post_index[1:],
+            inferences['point_effects_lower'].iloc[1:],
+            inferences['point_effects_upper'].iloc[1:],
+            color=color,
+            alpha=0.2
         )
         ax.axhline(y=0, color='k', linestyle='--')
         ax.grid(True, linestyle='--')
@@ -93,16 +114,20 @@ def plot(
         idx += 1
     if 'cumulative' in panels:
         ax = plt.subplot(n_panels, 1, idx, sharex=ax)
-        ax.plot(inferences['post_cum_effects_means'], 'b--',
-                label='Cumulative Effect')
-        ax.axvline(inferences.index[intervention_idx - 1], c='k', linestyle='--')
+        ax.plot(
+            pre_post_index[1:],
+            inferences['post_cum_effects_means'].iloc[1:],
+            ls='dashed',
+            color='orangered',
+            label='Cumulative Effect'
+        )
+        ax.axvline(pre_post_index[intervention_idx - 1], c='k', linestyle='--')
         ax.fill_between(
-            inferences['post_cum_effects_means'].index,
-            inferences['post_cum_effects_lower'],
-            inferences['post_cum_effects_upper'],
-            facecolor='blue',
-            interpolate=True,
-            alpha=0.25
+            pre_post_index[1:],
+            inferences['post_cum_effects_lower'].iloc[1:],
+            inferences['post_cum_effects_upper'].iloc[1:],
+            color=color,
+            alpha=0.2
         )
         ax.grid(True, linestyle='--')
         ax.axhline(y=0, color='k', linestyle='--')

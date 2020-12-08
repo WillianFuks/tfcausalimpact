@@ -174,33 +174,63 @@ def test_SquareRootBijector():
 
 def test_build_default_model(rand_data, pre_int_period, post_int_period):
     prior_level_sd = 0.01
-
     pre_data = pd.DataFrame(rand_data.iloc[pre_int_period[0]: pre_int_period[1], 0])
     post_data = pd.DataFrame(rand_data.iloc[post_int_period[0]: post_int_period[1], 0])
-    model = cimodel.build_default_model(pre_data, post_data, prior_level_sd)
-    assert isinstance(model, tfp.sts.LocalLevel)
-    prior = model.parameters[0].prior
-    assert isinstance(prior, tfd.TransformedDistribution)
-    assert isinstance(prior.bijector, cimodel.SquareRootBijector)
-    assert isinstance(prior.distribution, tfd.InverseGamma)
-    assert prior.dtype == tf.float32
+    model = cimodel.build_default_model(pre_data, post_data, prior_level_sd, 1, 1)
+    assert isinstance(model, tfp.sts.Sum)
+    obs_prior = model.parameters[0].prior
+    assert isinstance(obs_prior, tfd.TransformedDistribution)
+    assert isinstance(obs_prior.bijector, cimodel.SquareRootBijector)
+    assert isinstance(obs_prior.distribution, tfd.InverseGamma)
+    level_prior = model.parameters[1].prior
+    assert isinstance(level_prior, tfd.TransformedDistribution)
+    assert isinstance(level_prior.bijector, cimodel.SquareRootBijector)
+    assert isinstance(level_prior.distribution, tfd.InverseGamma)
+    assert level_prior.dtype == tf.float32
 
     pre_data = pd.DataFrame(rand_data.iloc[pre_int_period[0]: pre_int_period[1], :])
     post_data = pd.DataFrame(rand_data.iloc[post_int_period[0]: post_int_period[1], :])
-    model = cimodel.build_default_model(pre_data, post_data, prior_level_sd)
+    model = cimodel.build_default_model(pre_data, post_data, prior_level_sd, 1, 1)
     assert isinstance(model, tfp.sts.Sum)
-    c0 = model.components[0]
-    prior = c0.parameters[0].prior
-    assert isinstance(prior, tfd.TransformedDistribution)
-    assert isinstance(prior.bijector, cimodel.SquareRootBijector)
-    assert isinstance(prior.distribution, tfd.InverseGamma)
-    assert prior.dtype == tf.float32
-    c1 = model.components[1]
-    design_matrix = c1.design_matrix.to_dense()
+    obs_prior = model.parameters[0].prior
+    assert isinstance(obs_prior, tfd.TransformedDistribution)
+    assert isinstance(obs_prior.bijector, cimodel.SquareRootBijector)
+    assert isinstance(obs_prior.distribution, tfd.InverseGamma)
+    level_prior = model.parameters[1].prior
+    assert isinstance(level_prior, tfd.TransformedDistribution)
+    assert isinstance(level_prior.bijector, cimodel.SquareRootBijector)
+    assert isinstance(level_prior.distribution, tfd.InverseGamma)
+    assert level_prior.dtype == tf.float32
+    level = model.components[1]
+    design_matrix = level.design_matrix.to_dense()
     np.testing.assert_equal(pd.concat([pre_data, post_data]).iloc[:, 1:].values.astype(
                             np.float32),
                             design_matrix)
     assert design_matrix.dtype == tf.float32
+    # test seasonal
+    pre_data = pd.DataFrame(rand_data.iloc[pre_int_period[0]: pre_int_period[1], :])
+    post_data = pd.DataFrame(rand_data.iloc[post_int_period[0]: post_int_period[1], :])
+    model = cimodel.build_default_model(pre_data, post_data, prior_level_sd, 7, 2)
+    assert isinstance(model, tfp.sts.Sum)
+    obs_prior = model.parameters[0].prior
+    assert isinstance(obs_prior, tfd.TransformedDistribution)
+    assert isinstance(obs_prior.bijector, cimodel.SquareRootBijector)
+    assert isinstance(obs_prior.distribution, tfd.InverseGamma)
+    assert obs_prior.dtype == tf.float32
+    level_prior = model.parameters[1].prior
+    assert isinstance(level_prior, tfd.TransformedDistribution)
+    assert isinstance(level_prior.bijector, cimodel.SquareRootBijector)
+    assert isinstance(level_prior.distribution, tfd.InverseGamma)
+    assert level_prior.dtype == tf.float32
+    level = model.components[1]
+    design_matrix = level.design_matrix.to_dense()
+    np.testing.assert_equal(pd.concat([pre_data, post_data]).iloc[:, 1:].values.astype(
+                            np.float32),
+                            design_matrix)
+    seasonal_component = model.components[-1]
+    assert isinstance(seasonal_component, tfp.sts.Seasonal)
+    assert seasonal_component.num_seasons == 7
+    assert seasonal_component.num_steps_per_season == 2
 
 
 def test_fit_model(monkeypatch):
@@ -249,7 +279,7 @@ def test_fit_model(monkeypatch):
         num_steps=200
     )
     assert kr is None
-    assert samples == '50 var_post_samples'
+    assert samples == '100 var_post_samples'
 
     with pytest.raises(ValueError) as excinfo:
         cimodel.fit_model(model=model, observed_time_series=observed_time_series,

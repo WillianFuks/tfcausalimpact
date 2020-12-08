@@ -27,6 +27,9 @@ def test_format_input_data(rand_data):
     data = cidata.format_input_data(rand_data)
     pd.testing.assert_frame_equal(data, rand_data)
 
+    data = pd.DataFrame(cidata.format_input_data(rand_data.iloc[:, 0]))
+    pd.testing.assert_frame_equal(data, pd.DataFrame(rand_data.iloc[:, 0]))
+
     with pytest.raises(ValueError) as excinfo:
         cidata.format_input_data('test')
     assert str(excinfo.value) == 'Could not transform input data to pandas DataFrame.'
@@ -290,7 +293,7 @@ def test_process_input_data(rand_data, pre_int_period, post_int_period, date_ran
         assert results['model_args'] == {
             'standardize': True,
             'prior_level_sd': 0.01,
-            'niter': 100,
+            'niter': 1000,
             'nseasons': 1,
             'season_duration': 1,
             'fit_method': 'hmc'
@@ -331,7 +334,12 @@ def test_process_input_data(rand_data, pre_int_period, post_int_period, date_ran
     process_alpha_mock = mock.Mock()
     process_alpha_mock.return_value = 0.05
     process_model_args_mock = mock.Mock()
-    process_model_args_mock.return_value = {'standardize': True, 'prior_level_sd': 0.01}
+    process_model_args_mock.return_value = {
+        'standardize': True,
+        'prior_level_sd': 0.01,
+        'nseasons': 1,
+        'season_duration': 1
+    }
     check_input_model_mock = mock.Mock()
     build_default_model_mock = mock.Mock()
     build_default_model_mock.return_value = 'default model'
@@ -373,7 +381,12 @@ def test_process_input_data(rand_data, pre_int_period, post_int_period, date_ran
         'normed_pre_data': 'normed_pre_data',
         'normed_post_data': 'normed_post_data',
         'model': 'model',
-        'model_args': {'standardize': True, 'prior_level_sd': 0.01},
+        'model_args': {
+            'standardize': True,
+            'prior_level_sd': 0.01,
+            'nseasons': 1,
+            'season_duration': 1
+        },
         'alpha': 0.05,
         'mu_sig': 'mu_sig'
     }
@@ -381,7 +394,10 @@ def test_process_input_data(rand_data, pre_int_period, post_int_period, date_ran
     results = cidata.process_input_data('input_data', pre_int_period, post_int_period,
                                         None, {}, 0.05)
     build_default_model_mock.assert_called_once_with('normed_pre_data',
-                                                     'normed_post_data', 0.01)
+                                                     'normed_post_data',
+                                                     0.01,
+                                                     1,
+                                                     1)
     assert results == {
         'data': 'processed_data',
         'pre_period': [0, 99],
@@ -391,7 +407,12 @@ def test_process_input_data(rand_data, pre_int_period, post_int_period, date_ran
         'normed_pre_data': 'normed_pre_data',
         'normed_post_data': 'normed_post_data',
         'model': 'default model',
-        'model_args': {'standardize': True, 'prior_level_sd': 0.01},
+        'model_args': {
+            'standardize': True,
+            'prior_level_sd': 0.01,
+            'nseasons': 1,
+            'season_duration': 1
+        },
         'alpha': 0.05,
         'mu_sig': 'mu_sig'
     }

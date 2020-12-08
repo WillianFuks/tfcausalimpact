@@ -15,10 +15,11 @@
 
 import numpy as np
 import pandas as pd
+import tensorflow as tf
 
 
 import causalimpact.inferences as inferrer
-import causalimpact.misc as misc
+from causalimpact.misc import get_z_score, maybe_unstandardize
 
 
 def test_get_lower_upper_percentiles():
@@ -28,11 +29,11 @@ def test_get_lower_upper_percentiles():
 
 def test_maybe_unstandardize():
     data = pd.DataFrame(np.arange(0, 10))
-    results = inferrer.maybe_unstardardize(data)
+    results = inferrer.maybe_unstandardize(data)
     pd.testing.assert_frame_equal(results, data)
 
     mu_sig = (1, 2)
-    results = inferrer.maybe_unstardardize(data, mu_sig)
+    results = inferrer.maybe_unstandardize(data, mu_sig)
     pd.testing.assert_frame_equal(results, data * 2 + 1)
 
 
@@ -67,10 +68,13 @@ def test_compile_posterior_inferences():
 
     class PosteriorDist:
         def sample(self, niter):
-            return (
+            tmp = tf.convert_to_tensor(
                 np.tile(np.arange(start=7.1, stop=10.1, step=1), (niter, 1)) +
-                np.arange(niter).reshape(-1, 1)
+                np.arange(niter).reshape(-1, 1),
+                dtype=np.float32
             )
+            tmp = tmp[..., tf.newaxis]
+            return tmp
 
         def mean(self):
             return np.ones((len(post_data), 1)) * posterior_mean
@@ -105,11 +109,11 @@ def test_compile_posterior_inferences():
     # test complete_preds_lower
     pre_preds_lower = (
         np.array([1, 1, 1]) * one_step_mean -
-        misc.get_z_score(1 - alpha / 2) * one_step_stddev
+        get_z_score(1 - alpha / 2) * one_step_stddev
     ) * sig + mu
     post_preds_lower = (
         np.array([1, 1, 1]) * posterior_mean -
-        misc.get_z_score(1 - alpha / 2) * posterior_stddev
+        get_z_score(1 - alpha / 2) * posterior_stddev
     ) * sig + mu
     expec_complete_preds_lower = np.concatenate([pre_preds_lower, post_preds_lower])
     expec_complete_preds_lower = pd.DataFrame(
@@ -125,11 +129,11 @@ def test_compile_posterior_inferences():
     # test complete_preds_upper
     pre_preds_upper = (
         np.array([1, 1, 1]) * one_step_mean +
-        misc.get_z_score(1 - alpha / 2) * one_step_stddev
+        get_z_score(1 - alpha / 2) * one_step_stddev
     ) * sig + mu
     post_preds_upper = (
         np.array([1, 1, 1]) * posterior_mean +
-        misc.get_z_score(1 - alpha / 2) * posterior_stddev
+        get_z_score(1 - alpha / 2) * posterior_stddev
     ) * sig + mu
     expec_complete_preds_upper = np.concatenate([pre_preds_upper, post_preds_upper])
     expec_complete_preds_upper = pd.DataFrame(
@@ -156,7 +160,7 @@ def test_compile_posterior_inferences():
     # test post_preds_lower
     post_preds_lower = (
         np.array([np.nan] * 3 + [1, 1, 1]) * posterior_mean -
-        misc.get_z_score(1 - alpha / 2) * posterior_stddev
+        get_z_score(1 - alpha / 2) * posterior_stddev
     ) * sig + mu
     expec_post_preds_lower = pd.DataFrame(
         data=post_preds_lower,
@@ -171,7 +175,7 @@ def test_compile_posterior_inferences():
     # test post_preds_upper
     post_preds_upper = (
         np.array([np.nan] * 3 + [1, 1, 1]) * posterior_mean +
-        misc.get_z_score(1 - alpha / 2) * posterior_stddev
+        get_z_score(1 - alpha / 2) * posterior_stddev
     ) * sig + mu
     expec_post_preds_upper = pd.DataFrame(
         data=post_preds_upper,
@@ -209,7 +213,8 @@ def test_compile_posterior_inferences():
     )
     # test post_cum_preds_lower
     post_cum_preds_lower, post_cum_preds_upper = np.percentile(
-        np.cumsum(posterior_dist.sample(niter), axis=1),
+        np.cumsum(maybe_unstandardize(np.squeeze(posterior_dist.sample(niter)), mu_sig),
+                  axis=1),
         [100 * alpha / 2, 100 - 100 * alpha / 2],
         axis=0
     )
@@ -295,7 +300,9 @@ def test_compile_posterior_inferences():
     )
     # test post_cum_effects_lower
     post_cum_effects_lower, post_cum_effects_upper = np.percentile(
-        np.cumsum(post_data.iloc[:, 0].values - posterior_dist.sample(niter), axis=1),
+        np.cumsum(post_data.iloc[:, 0].values - maybe_unstandardize(np.squeeze(
+            posterior_dist.sample(niter)), mu_sig),
+                  axis=1),
         [100 * alpha / 2, 100 - 100 * alpha / 2],
         axis=0
     )

@@ -229,17 +229,38 @@ def build_default_model(
         """
         helper function to build the sd_prior distribution for standard deviation
         modeling.
+
+        Args
+        ----
+          sigma_guess: float
+              Initial guess of where the standard deviation of the parameter is located.
+
+        Returns
+        -------
+          tfd.Distribution
+              InverseGamma distribution modeling the standard deviation.
         """
         sample_size = kLocalLevelPriorSampleSize
         df = sample_size
-        a = df / 2
+        a = np.float32(df / 2)
         ss = sample_size * sigma_guess ** 2
-        b = ss / 2
+        b = np.float32(ss / 2)
         return tfd.InverseGamma(a, b)
 
     def _build_bijector(dist: tfd.Distribution) -> tfd.Distribution:
         """
-        helper function for building final bijector given sd_prior.
+        helper function for building final bijector given sd_prior. The bijector is
+        implemented through the `tfd.TransformedDistribution` class.
+
+        Args
+        ----
+          dist: tfd.Distribution
+              Distribution to receive the transformation `G(X)`.
+
+        Returns
+        -------
+          new_dist: tfd.Distribution
+              New distribution given by `y = G(X)`.
         """
         bijector = SquareRootBijector()
         new_dist = tfd.TransformedDistribution(dist, bijector)
@@ -247,20 +268,23 @@ def build_default_model(
 
     components = []
     observed_time_series = pre_data.iloc[:, 0].astype(np.float32)
+    obs_sd = observed_time_series.std()
     sd_prior = _build_inv_gamma_sd_prior()
     sd_prior = _build_bijector(sd_prior)
-    obs_prior = _build_inv_gamma_sd_prior(0.5)
+    # This is an approximation to simulate the bsts package from R. It's expected that
+    # given a few data points the posterior will converge appropriately given this
+    # distribution, that's why it's divided by 2
+    obs_prior = _build_inv_gamma_sd_prior(obs_sd / 2)
     obs_prior = _build_bijector(obs_prior)
-
     level_component = tfp.sts.LocalLevel(
         level_scale_prior=sd_prior,
         observed_time_series=observed_time_series
     )
     components.append(level_component)
-    # if it has more than 1 column then it has covariates X so add a linear regressor
+    # If it has more than 1 column then it has covariates X so add a linear regressor
     # component
     if len(pre_data.columns) > 1:
-        # we need to concatenate both pre and post data as this will allow the linear
+        # We need to concatenate both pre and post data as this will allow the linear
         # regressor component to use the post data when running forecasts. As first
         # column is supposed to have response variable `y` then we filter out just the
         # remaining columns for the `X` value
@@ -341,7 +365,7 @@ def fit_model(
                 num_steps=variational_steps
             )
             # Don't sample too much as varitional inference method is built aiming for
-            # performance first.
+            # performance first
             samples = variational_posteriors.sample(100)
             return samples, None
         return _run_vi()

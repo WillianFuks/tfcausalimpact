@@ -111,15 +111,9 @@ def process_input_data(
     ------
       ValueError: if input arguments is `None`.
     """
-    locals_ = locals()
-    none_args = [arg for arg in locals_ if locals_[arg] is None and arg != 'model']
-    if none_args:
-        raise ValueError(
-            f'{", ".join(none_args)} '
-            f'input argument{"s" if len(none_args) > 1 else ""} cannot be empty'
-        )
-    processed_data = format_input_data(data)
-    pre_data, post_data = process_pre_post_data(processed_data, pre_period, post_period)
+    _check_empty_inputs(locals())
+    fmt_data = format_input_data(data)
+    pre_data, post_data = process_pre_post_data(fmt_data, pre_period, post_period)
     alpha = process_alpha(alpha)
     model_args = cimodel.process_model_args(model_args if model_args else {})
     normed_data = (standardize_pre_and_post_data(pre_data, post_data) if
@@ -135,7 +129,7 @@ def process_input_data(
             model_args['season_duration']
         )
     return {
-        'data': processed_data,
+        'data': fmt_data,
         'pre_period': pre_period,
         'post_period': post_period,
         'pre_data': pre_data,
@@ -147,6 +141,15 @@ def process_input_data(
         'alpha': alpha,
         'mu_sig': normed_data[2]
     }
+
+
+def _check_empty_inputs(inputs):
+    none_args = [arg for arg in inputs if inputs[arg] is None and arg != 'model']
+    if none_args:
+        raise ValueError(
+            f'{", ".join(none_args)} '
+            f'input argument{"s" if len(none_args) > 1 else ""} cannot be empty'
+        )
 
 
 def standardize_pre_and_post_data(
