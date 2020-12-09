@@ -19,7 +19,6 @@ import pandas as pd
 import pytest
 import tensorflow_probability as tfp
 
-
 import causalimpact.data as cidata
 
 

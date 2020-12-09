@@ -18,12 +18,13 @@ Module responsible for processing data that feeds the causal impact algorithm.
 """
 
 
-import pandas as pd
-import numpy as np
-import tensorflow_probability as tfp
-import causalimpact.model as cimodel
+from typing import Any, Dict, List, Optional, Tuple, Union
 
-from typing import Union, List, Dict, Any, Optional, Tuple
+import numpy as np
+import pandas as pd
+import tensorflow_probability as tfp
+
+import causalimpact.model as cimodel
 from causalimpact.misc import standardize
 
 

@@ -53,7 +53,7 @@ def test_plot_original_panel(rand_data, pre_int_period, post_int_period, inferen
     monkeypatch.setattr('causalimpact.plot.get_plotter', plot_mock)
     plotter.plot(inferences, pre_data, post_data, panels=['original'])
     plot_mock.assert_called_once()
-    plot_mock.return_value.figure.assert_called_with(figsize=(15, 12))
+    plot_mock.return_value.figure.assert_called_with(figsize=(10, 7))
     plot_mock.return_value.subplot.assert_any_call(1, 1, 1)
     ax_mock = plot_mock.return_value.subplot.return_value
     ax_args = ax_mock.plot.call_args_list
@@ -69,7 +69,7 @@ def test_plot_original_panel(rand_data, pre_int_period, post_int_period, inferen
     assert_array_equal(inferences['complete_preds_means'].iloc[1:], ax_args[1][0][1])
     assert ax_args[1][1] == {'color': 'orangered', 'ls': 'dashed', 'label': 'Predicted'}
 
-    ax_mock.axvline.assert_called_with(pre_int_period[1], c='k', linestyle='--')
+    ax_mock.axvline.assert_called_with(pre_int_period[1], c='gray', linestyle='--')
 
     ax_args = ax_mock.fill_between.call_args_list[0]
     assert_array_equal(ax_args[0][0], pre_post_index[1:])
@@ -77,7 +77,7 @@ def test_plot_original_panel(rand_data, pre_int_period, post_int_period, inferen
     assert_array_equal(ax_args[0][2], inferences['complete_preds_upper'].iloc[1:])
     assert ax_args[1] == {'color': (1.0, 0.4981, 0.0549), 'alpha': 0.2}
 
-    ax_mock.grid.assert_called_with(True, linestyle='--')
+    ax_mock.grid.assert_called_with(True, color='gainsboro')
     ax_mock.legend.assert_called()
     plot_mock.return_value.show.assert_called_once()
 
@@ -91,7 +91,7 @@ def test_plot_original_panel_gap_data(rand_data, pre_int_gap_period, post_int_ga
     monkeypatch.setattr('causalimpact.plot.get_plotter', plot_mock)
     plotter.plot(inferences, pre_data, post_data, panels=['original'])
     plot_mock.assert_called_once()
-    plot_mock.return_value.figure.assert_called_with(figsize=(15, 12))
+    plot_mock.return_value.figure.assert_called_with(figsize=(10, 7))
     plot_mock.return_value.subplot.assert_any_call(1, 1, 1)
     ax_mock = plot_mock.return_value.subplot.return_value
     ax_args = ax_mock.plot.call_args_list
@@ -107,7 +107,7 @@ def test_plot_original_panel_gap_data(rand_data, pre_int_gap_period, post_int_ga
     assert_array_equal(inferences['complete_preds_means'].iloc[1:], ax_args[1][0][1])
     assert ax_args[1][1] == {'color': 'orangered', 'ls': 'dashed', 'label': 'Predicted'}
 
-    ax_mock.axvline.assert_called_with(pre_int_gap_period[1], c='k', linestyle='--')
+    ax_mock.axvline.assert_called_with(pre_int_gap_period[1], c='gray', linestyle='--')
 
     ax_args = ax_mock.fill_between.call_args_list[0]
     assert_array_equal(ax_args[0][0], pre_post_index[1:])
@@ -115,7 +115,7 @@ def test_plot_original_panel_gap_data(rand_data, pre_int_gap_period, post_int_ga
     assert_array_equal(ax_args[0][2], inferences['complete_preds_upper'].iloc[1:])
     assert ax_args[1] == {'color': (1.0, 0.4981, 0.0549), 'alpha': 0.2}
 
-    ax_mock.grid.assert_called_with(True, linestyle='--')
+    ax_mock.grid.assert_called_with(True, color='gainsboro')
     ax_mock.legend.assert_called()
     plot_mock.return_value.show.assert_called_once()
 
@@ -129,7 +129,7 @@ def test_plot_original_panel_date_index(date_rand_data, pre_str_period, post_str
     monkeypatch.setattr('causalimpact.plot.get_plotter', plot_mock)
     plotter.plot(inferences, pre_data, post_data, panels=['original'])
     plot_mock.assert_called_once()
-    plot_mock.return_value.figure.assert_called_with(figsize=(15, 12))
+    plot_mock.return_value.figure.assert_called_with(figsize=(10, 7))
     plot_mock.return_value.subplot.assert_any_call(1, 1, 1)
     ax_mock = plot_mock.return_value.subplot.return_value
     ax_args = ax_mock.plot.call_args_list
@@ -146,7 +146,8 @@ def test_plot_original_panel_date_index(date_rand_data, pre_str_period, post_str
     assert ax_args[1][1] == {'color': 'orangered', 'ls': 'dashed', 'label': 'Predicted'}
 
     idx_value = pre_post_index.get_loc(pre_str_period[1])
-    ax_mock.axvline.assert_called_with(pre_post_index[idx_value], c='k', linestyle='--')
+    ax_mock.axvline.assert_called_with(pre_post_index[idx_value], c='gray',
+                                       linestyle='--')
 
     ax_args = ax_mock.fill_between.call_args_list[0]
     assert_array_equal(ax_args[0][0], pre_post_index[1:])
@@ -154,7 +155,7 @@ def test_plot_original_panel_date_index(date_rand_data, pre_str_period, post_str
     assert_array_equal(ax_args[0][2], inferences['complete_preds_upper'].iloc[1:])
     assert ax_args[1] == {'color': (1.0, 0.4981, 0.0549), 'alpha': 0.2}
 
-    ax_mock.grid.assert_called_with(True, linestyle='--')
+    ax_mock.grid.assert_called_with(True, color='gainsboro')
     ax_mock.legend.assert_called()
     plot_mock.return_value.show.assert_called_once()
 
@@ -169,7 +170,7 @@ def test_plot_original_panel_gap_date_index(date_rand_data, pre_str_gap_period,
     monkeypatch.setattr('causalimpact.plot.get_plotter', plot_mock)
     plotter.plot(inferences, pre_data, post_data, panels=['original'])
     plot_mock.assert_called_once()
-    plot_mock.return_value.figure.assert_called_with(figsize=(15, 12))
+    plot_mock.return_value.figure.assert_called_with(figsize=(10, 7))
     plot_mock.return_value.subplot.assert_any_call(1, 1, 1)
     ax_mock = plot_mock.return_value.subplot.return_value
     ax_args = ax_mock.plot.call_args_list
@@ -186,7 +187,8 @@ def test_plot_original_panel_gap_date_index(date_rand_data, pre_str_gap_period,
     assert ax_args[1][1] == {'color': 'orangered', 'ls': 'dashed', 'label': 'Predicted'}
 
     idx_value = pre_post_index.get_loc(pre_str_gap_period[1])
-    ax_mock.axvline.assert_called_with(pre_post_index[idx_value], c='k', linestyle='--')
+    ax_mock.axvline.assert_called_with(pre_post_index[idx_value], c='gray',
+                                       linestyle='--')
 
     ax_args = ax_mock.fill_between.call_args_list[0]
     assert_array_equal(ax_args[0][0], pre_post_index[1:])
@@ -194,7 +196,7 @@ def test_plot_original_panel_gap_date_index(date_rand_data, pre_str_gap_period,
     assert_array_equal(ax_args[0][2], inferences['complete_preds_upper'].iloc[1:])
     assert ax_args[1] == {'color': (1.0, 0.4981, 0.0549), 'alpha': 0.2}
 
-    ax_mock.grid.assert_called_with(True, linestyle='--')
+    ax_mock.grid.assert_called_with(True, color='gainsboro')
     ax_mock.legend.assert_called()
     plot_mock.return_value.show.assert_called_once()
 
@@ -211,7 +213,7 @@ def test_plot_original_panel_date_index_no_freq(date_rand_data, pre_str_period,
     monkeypatch.setattr('causalimpact.plot.get_plotter', plot_mock)
     plotter.plot(inferences, pre_data, post_data, panels=['original'])
     plot_mock.assert_called_once()
-    plot_mock.return_value.figure.assert_called_with(figsize=(15, 12))
+    plot_mock.return_value.figure.assert_called_with(figsize=(10, 7))
     plot_mock.return_value.subplot.assert_any_call(1, 1, 1)
     ax_mock = plot_mock.return_value.subplot.return_value
     ax_args = ax_mock.plot.call_args_list
@@ -228,7 +230,8 @@ def test_plot_original_panel_date_index_no_freq(date_rand_data, pre_str_period,
     assert ax_args[1][1] == {'color': 'orangered', 'ls': 'dashed', 'label': 'Predicted'}
 
     idx_value = pre_post_index.get_loc(pre_str_period[1])
-    ax_mock.axvline.assert_called_with(pre_post_index[idx_value], c='k', linestyle='--')
+    ax_mock.axvline.assert_called_with(pre_post_index[idx_value], c='gray',
+                                       linestyle='--')
 
     ax_args = ax_mock.fill_between.call_args_list[0]
     assert_array_equal(ax_args[0][0], pre_post_index[1:])
@@ -236,7 +239,7 @@ def test_plot_original_panel_date_index_no_freq(date_rand_data, pre_str_period,
     assert_array_equal(ax_args[0][2], inferences['complete_preds_upper'].iloc[1:])
     assert ax_args[1] == {'color': (1.0, 0.4981, 0.0549), 'alpha': 0.2}
 
-    ax_mock.grid.assert_called_with(True, linestyle='--')
+    ax_mock.grid.assert_called_with(True, color='gainsboro')
     ax_mock.legend.assert_called()
     plot_mock.return_value.show.assert_called_once()
 
@@ -250,7 +253,7 @@ def test_plot_pointwise_panel(rand_data, pre_int_period, post_int_period, infere
     monkeypatch.setattr('causalimpact.plot.get_plotter', plot_mock)
     plotter.plot(inferences, pre_data, post_data, panels=['pointwise'])
     plot_mock.assert_called_once()
-    plot_mock.return_value.figure.assert_called_with(figsize=(15, 12))
+    plot_mock.return_value.figure.assert_called_with(figsize=(10, 7))
     plot_mock.return_value.subplot.assert_any_call(1, 1, 1)
     ax_mock = plot_mock.return_value.subplot.return_value
     ax_args = ax_mock.plot.call_args_list
@@ -262,7 +265,7 @@ def test_plot_pointwise_panel(rand_data, pre_int_period, post_int_period, infere
     )
     assert ax_args[0][1] == {'label': 'Point Effects', 'ls': 'dashed',
                              'color': 'orangered'}
-    ax_mock.axvline.assert_called_with(pre_int_period[1], c='k', linestyle='--')
+    ax_mock.axvline.assert_called_with(pre_int_period[1], c='gray', linestyle='--')
 
     ax_args = ax_mock.fill_between.call_args_list[0]
     assert_array_equal(ax_args[0][0], pre_post_index[1:])
@@ -270,7 +273,7 @@ def test_plot_pointwise_panel(rand_data, pre_int_period, post_int_period, infere
     assert_array_equal(ax_args[0][2], inferences['point_effects_upper'].iloc[1:])
     assert ax_args[1] == {'color': (1.0, 0.4981, 0.0549), 'alpha': 0.2}
 
-    ax_mock.grid.assert_called_with(True, linestyle='--')
+    ax_mock.grid.assert_called_with(True, color='gainsboro')
     ax_mock.legend.assert_called()
     plot_mock.return_value.show.assert_called_once()
 
@@ -285,7 +288,7 @@ def test_plot_pointwise_panel_gap_data(rand_data, pre_int_gap_period,
     monkeypatch.setattr('causalimpact.plot.get_plotter', plot_mock)
     plotter.plot(inferences, pre_data, post_data, panels=['pointwise'])
     plot_mock.assert_called_once()
-    plot_mock.return_value.figure.assert_called_with(figsize=(15, 12))
+    plot_mock.return_value.figure.assert_called_with(figsize=(10, 7))
     plot_mock.return_value.subplot.assert_any_call(1, 1, 1)
     ax_mock = plot_mock.return_value.subplot.return_value
     ax_args = ax_mock.plot.call_args_list
@@ -297,7 +300,7 @@ def test_plot_pointwise_panel_gap_data(rand_data, pre_int_gap_period,
     )
     assert ax_args[0][1] == {'label': 'Point Effects', 'ls': 'dashed',
                              'color': 'orangered'}
-    ax_mock.axvline.assert_called_with(pre_int_gap_period[1], c='k', linestyle='--')
+    ax_mock.axvline.assert_called_with(pre_int_gap_period[1], c='gray', linestyle='--')
 
     ax_args = ax_mock.fill_between.call_args_list[0]
     assert_array_equal(ax_args[0][0], pre_post_index[1:])
@@ -305,7 +308,7 @@ def test_plot_pointwise_panel_gap_data(rand_data, pre_int_gap_period,
     assert_array_equal(ax_args[0][2], inferences['point_effects_upper'].iloc[1:])
     assert ax_args[1] == {'color': (1.0, 0.4981, 0.0549), 'alpha': 0.2}
 
-    ax_mock.grid.assert_called_with(True, linestyle='--')
+    ax_mock.grid.assert_called_with(True, color='gainsboro')
     ax_mock.legend.assert_called()
     plot_mock.return_value.show.assert_called_once()
 
@@ -319,7 +322,7 @@ def test_plot_pointwise_panel_date_index(date_rand_data, pre_str_period, post_st
     monkeypatch.setattr('causalimpact.plot.get_plotter', plot_mock)
     plotter.plot(inferences, pre_data, post_data, panels=['pointwise'])
     plot_mock.assert_called_once()
-    plot_mock.return_value.figure.assert_called_with(figsize=(15, 12))
+    plot_mock.return_value.figure.assert_called_with(figsize=(10, 7))
     plot_mock.return_value.subplot.assert_any_call(1, 1, 1)
     ax_mock = plot_mock.return_value.subplot.return_value
     ax_args = ax_mock.plot.call_args_list
@@ -332,7 +335,8 @@ def test_plot_pointwise_panel_date_index(date_rand_data, pre_str_period, post_st
     assert ax_args[0][1] == {'label': 'Point Effects', 'ls': 'dashed',
                              'color': 'orangered'}
     idx_value = pre_post_index.get_loc(pre_str_period[1])
-    ax_mock.axvline.assert_called_with(pre_post_index[idx_value], c='k', linestyle='--')
+    ax_mock.axvline.assert_called_with(pre_post_index[idx_value], c='gray',
+                                       linestyle='--')
 
     ax_args = ax_mock.fill_between.call_args_list[0]
     assert_array_equal(ax_args[0][0], pre_post_index[1:])
@@ -340,7 +344,7 @@ def test_plot_pointwise_panel_date_index(date_rand_data, pre_str_period, post_st
     assert_array_equal(ax_args[0][2], inferences['point_effects_upper'].iloc[1:])
     assert ax_args[1] == {'color': (1.0, 0.4981, 0.0549), 'alpha': 0.2}
 
-    ax_mock.grid.assert_called_with(True, linestyle='--')
+    ax_mock.grid.assert_called_with(True, color='gainsboro')
     ax_mock.legend.assert_called()
     plot_mock.return_value.show.assert_called_once()
 
@@ -355,7 +359,7 @@ def test_plot_pointwise_panel_gap_date_index(date_rand_data, pre_str_gap_period,
     monkeypatch.setattr('causalimpact.plot.get_plotter', plot_mock)
     plotter.plot(inferences, pre_data, post_data, panels=['pointwise'])
     plot_mock.assert_called_once()
-    plot_mock.return_value.figure.assert_called_with(figsize=(15, 12))
+    plot_mock.return_value.figure.assert_called_with(figsize=(10, 7))
     plot_mock.return_value.subplot.assert_any_call(1, 1, 1)
     ax_mock = plot_mock.return_value.subplot.return_value
     ax_args = ax_mock.plot.call_args_list
@@ -368,7 +372,8 @@ def test_plot_pointwise_panel_gap_date_index(date_rand_data, pre_str_gap_period,
     assert ax_args[0][1] == {'label': 'Point Effects', 'ls': 'dashed',
                              'color': 'orangered'}
     idx_value = pre_post_index.get_loc(pre_str_gap_period[1])
-    ax_mock.axvline.assert_called_with(pre_post_index[idx_value], c='k', linestyle='--')
+    ax_mock.axvline.assert_called_with(pre_post_index[idx_value], c='gray',
+                                       linestyle='--')
 
     ax_args = ax_mock.fill_between.call_args_list[0]
     assert_array_equal(ax_args[0][0], pre_post_index[1:])
@@ -376,7 +381,7 @@ def test_plot_pointwise_panel_gap_date_index(date_rand_data, pre_str_gap_period,
     assert_array_equal(ax_args[0][2], inferences['point_effects_upper'].iloc[1:])
     assert ax_args[1] == {'color': (1.0, 0.4981, 0.0549), 'alpha': 0.2}
 
-    ax_mock.grid.assert_called_with(True, linestyle='--')
+    ax_mock.grid.assert_called_with(True, color='gainsboro')
     ax_mock.legend.assert_called()
     plot_mock.return_value.show.assert_called_once()
 
@@ -393,7 +398,7 @@ def test_plot_pointwise_panel_date_index_no_freq(date_rand_data, pre_str_period,
     monkeypatch.setattr('causalimpact.plot.get_plotter', plot_mock)
     plotter.plot(inferences, pre_data, post_data, panels=['pointwise'])
     plot_mock.assert_called_once()
-    plot_mock.return_value.figure.assert_called_with(figsize=(15, 12))
+    plot_mock.return_value.figure.assert_called_with(figsize=(10, 7))
     plot_mock.return_value.subplot.assert_any_call(1, 1, 1)
     ax_mock = plot_mock.return_value.subplot.return_value
     ax_args = ax_mock.plot.call_args_list
@@ -406,7 +411,8 @@ def test_plot_pointwise_panel_date_index_no_freq(date_rand_data, pre_str_period,
     assert ax_args[0][1] == {'label': 'Point Effects', 'ls': 'dashed',
                              'color': 'orangered'}
     idx_value = pre_post_index.get_loc(pre_str_period[1])
-    ax_mock.axvline.assert_called_with(pre_post_index[idx_value], c='k', linestyle='--')
+    ax_mock.axvline.assert_called_with(pre_post_index[idx_value], c='gray',
+                                       linestyle='--')
 
     ax_args = ax_mock.fill_between.call_args_list[0]
     assert_array_equal(ax_args[0][0], pre_post_index[1:])
@@ -414,7 +420,7 @@ def test_plot_pointwise_panel_date_index_no_freq(date_rand_data, pre_str_period,
     assert_array_equal(ax_args[0][2], inferences['point_effects_upper'].iloc[1:])
     assert ax_args[1] == {'color': (1.0, 0.4981, 0.0549), 'alpha': 0.2}
 
-    ax_mock.grid.assert_called_with(True, linestyle='--')
+    ax_mock.grid.assert_called_with(True, color='gainsboro')
     ax_mock.legend.assert_called()
     plot_mock.return_value.show.assert_called_once()
 
@@ -428,7 +434,7 @@ def test_plot_cumulative_panel(rand_data, pre_int_period, post_int_period, infer
     monkeypatch.setattr('causalimpact.plot.get_plotter', plot_mock)
     plotter.plot(inferences, pre_data, post_data, panels=['cumulative'])
     plot_mock.assert_called_once()
-    plot_mock.return_value.figure.assert_called_with(figsize=(15, 12))
+    plot_mock.return_value.figure.assert_called_with(figsize=(10, 7))
     plot_mock.return_value.subplot.assert_any_call(1, 1, 1)
     ax_mock = plot_mock.return_value.subplot.return_value
     ax_args = ax_mock.plot.call_args_list
@@ -440,7 +446,7 @@ def test_plot_cumulative_panel(rand_data, pre_int_period, post_int_period, infer
     )
     assert ax_args[0][1] == {'label': 'Cumulative Effect', 'ls': 'dashed',
                              'color': 'orangered'}
-    ax_mock.axvline.assert_called_with(pre_int_period[1], c='k', linestyle='--')
+    ax_mock.axvline.assert_called_with(pre_int_period[1], c='gray', linestyle='--')
 
     ax_args = ax_mock.fill_between.call_args_list[0]
     assert_array_equal(ax_args[0][0], pre_post_index[1:])
@@ -448,7 +454,7 @@ def test_plot_cumulative_panel(rand_data, pre_int_period, post_int_period, infer
     assert_array_equal(ax_args[0][2], inferences['post_cum_effects_upper'].iloc[1:])
     assert ax_args[1] == {'color': (1.0, 0.4981, 0.0549), 'alpha': 0.2}
 
-    ax_mock.grid.assert_called_with(True, linestyle='--')
+    ax_mock.grid.assert_called_with(True, color='gainsboro')
     ax_mock.legend.assert_called()
     plot_mock.return_value.show.assert_called_once()
 
@@ -462,7 +468,7 @@ def test_plot_cumulative_panel_gap_data(rand_data, pre_int_gap_period,
     monkeypatch.setattr('causalimpact.plot.get_plotter', plot_mock)
     plotter.plot(inferences, pre_data, post_data, panels=['cumulative'])
     plot_mock.assert_called_once()
-    plot_mock.return_value.figure.assert_called_with(figsize=(15, 12))
+    plot_mock.return_value.figure.assert_called_with(figsize=(10, 7))
     plot_mock.return_value.subplot.assert_any_call(1, 1, 1)
     ax_mock = plot_mock.return_value.subplot.return_value
     ax_args = ax_mock.plot.call_args_list
@@ -474,7 +480,7 @@ def test_plot_cumulative_panel_gap_data(rand_data, pre_int_gap_period,
     )
     assert ax_args[0][1] == {'label': 'Cumulative Effect', 'ls': 'dashed',
                              'color': 'orangered'}
-    ax_mock.axvline.assert_called_with(pre_int_gap_period[1], c='k', linestyle='--')
+    ax_mock.axvline.assert_called_with(pre_int_gap_period[1], c='gray', linestyle='--')
 
     ax_args = ax_mock.fill_between.call_args_list[0]
     assert_array_equal(ax_args[0][0], pre_post_index[1:])
@@ -482,7 +488,7 @@ def test_plot_cumulative_panel_gap_data(rand_data, pre_int_gap_period,
     assert_array_equal(ax_args[0][2], inferences['post_cum_effects_upper'].iloc[1:])
     assert ax_args[1] == {'color': (1.0, 0.4981, 0.0549), 'alpha': 0.2}
 
-    ax_mock.grid.assert_called_with(True, linestyle='--')
+    ax_mock.grid.assert_called_with(True, color='gainsboro')
     ax_mock.legend.assert_called()
     plot_mock.return_value.show.assert_called_once()
 
@@ -496,7 +502,7 @@ def test_plot_cumulative_panel_date_index(date_rand_data, pre_str_period,
     monkeypatch.setattr('causalimpact.plot.get_plotter', plot_mock)
     plotter.plot(inferences, pre_data, post_data, panels=['cumulative'])
     plot_mock.assert_called_once()
-    plot_mock.return_value.figure.assert_called_with(figsize=(15, 12))
+    plot_mock.return_value.figure.assert_called_with(figsize=(10, 7))
     plot_mock.return_value.subplot.assert_any_call(1, 1, 1)
     ax_mock = plot_mock.return_value.subplot.return_value
     ax_args = ax_mock.plot.call_args_list
@@ -509,7 +515,8 @@ def test_plot_cumulative_panel_date_index(date_rand_data, pre_str_period,
     assert ax_args[0][1] == {'label': 'Cumulative Effect', 'ls': 'dashed',
                              'color': 'orangered'}
     idx_value = pre_post_index.get_loc(pre_str_period[1])
-    ax_mock.axvline.assert_called_with(pre_post_index[idx_value], c='k', linestyle='--')
+    ax_mock.axvline.assert_called_with(pre_post_index[idx_value], c='gray',
+                                       linestyle='--')
 
     ax_args = ax_mock.fill_between.call_args_list[0]
     assert_array_equal(ax_args[0][0], pre_post_index[1:])
@@ -517,7 +524,7 @@ def test_plot_cumulative_panel_date_index(date_rand_data, pre_str_period,
     assert_array_equal(ax_args[0][2], inferences['post_cum_effects_upper'].iloc[1:])
     assert ax_args[1] == {'color': (1.0, 0.4981, 0.0549), 'alpha': 0.2}
 
-    ax_mock.grid.assert_called_with(True, linestyle='--')
+    ax_mock.grid.assert_called_with(True, color='gainsboro')
     ax_mock.legend.assert_called()
     plot_mock.return_value.show.assert_called_once()
 
@@ -532,7 +539,7 @@ def test_plot_cumulative_panel_gap_date_index(date_rand_data, pre_str_gap_period
     monkeypatch.setattr('causalimpact.plot.get_plotter', plot_mock)
     plotter.plot(inferences, pre_data, post_data, panels=['cumulative'])
     plot_mock.assert_called_once()
-    plot_mock.return_value.figure.assert_called_with(figsize=(15, 12))
+    plot_mock.return_value.figure.assert_called_with(figsize=(10, 7))
     plot_mock.return_value.subplot.assert_any_call(1, 1, 1)
     ax_mock = plot_mock.return_value.subplot.return_value
     ax_args = ax_mock.plot.call_args_list
@@ -545,7 +552,8 @@ def test_plot_cumulative_panel_gap_date_index(date_rand_data, pre_str_gap_period
     assert ax_args[0][1] == {'label': 'Cumulative Effect', 'ls': 'dashed',
                              'color': 'orangered'}
     idx_value = pre_post_index.get_loc(pre_str_gap_period[1])
-    ax_mock.axvline.assert_called_with(pre_post_index[idx_value], c='k', linestyle='--')
+    ax_mock.axvline.assert_called_with(pre_post_index[idx_value], c='gray',
+                                       linestyle='--')
 
     ax_args = ax_mock.fill_between.call_args_list[0]
     assert_array_equal(ax_args[0][0], pre_post_index[1:])
@@ -553,7 +561,7 @@ def test_plot_cumulative_panel_gap_date_index(date_rand_data, pre_str_gap_period
     assert_array_equal(ax_args[0][2], inferences['post_cum_effects_upper'].iloc[1:])
     assert ax_args[1] == {'color': (1.0, 0.4981, 0.0549), 'alpha': 0.2}
 
-    ax_mock.grid.assert_called_with(True, linestyle='--')
+    ax_mock.grid.assert_called_with(True, color='gainsboro')
     ax_mock.legend.assert_called()
     plot_mock.return_value.show.assert_called_once()
 
@@ -570,7 +578,7 @@ def test_plot_cumulative_panel_date_index_no_freq(date_rand_data, pre_str_period
     monkeypatch.setattr('causalimpact.plot.get_plotter', plot_mock)
     plotter.plot(inferences, pre_data, post_data, panels=['cumulative'])
     plot_mock.assert_called_once()
-    plot_mock.return_value.figure.assert_called_with(figsize=(15, 12))
+    plot_mock.return_value.figure.assert_called_with(figsize=(10, 7))
     plot_mock.return_value.subplot.assert_any_call(1, 1, 1)
     ax_mock = plot_mock.return_value.subplot.return_value
     ax_args = ax_mock.plot.call_args_list
@@ -583,7 +591,8 @@ def test_plot_cumulative_panel_date_index_no_freq(date_rand_data, pre_str_period
     assert ax_args[0][1] == {'label': 'Cumulative Effect', 'ls': 'dashed',
                              'color': 'orangered'}
     idx_value = pre_post_index.get_loc(pre_str_period[1])
-    ax_mock.axvline.assert_called_with(pre_post_index[idx_value], c='k', linestyle='--')
+    ax_mock.axvline.assert_called_with(pre_post_index[idx_value], c='gray',
+                                       linestyle='--')
 
     ax_args = ax_mock.fill_between.call_args_list[0]
     assert_array_equal(ax_args[0][0], pre_post_index[1:])
@@ -591,7 +600,7 @@ def test_plot_cumulative_panel_date_index_no_freq(date_rand_data, pre_str_period
     assert_array_equal(ax_args[0][2], inferences['post_cum_effects_upper'].iloc[1:])
     assert ax_args[1] == {'color': (1.0, 0.4981, 0.0549), 'alpha': 0.2}
 
-    ax_mock.grid.assert_called_with(True, linestyle='--')
+    ax_mock.grid.assert_called_with(True, color='gainsboro')
     ax_mock.legend.assert_called()
     plot_mock.return_value.show.assert_called_once()
 
@@ -604,7 +613,7 @@ def test_plot_multi_panels(rand_data, pre_int_period, post_int_period, inference
     monkeypatch.setattr('causalimpact.plot.get_plotter', plot_mock)
     plotter.plot(inferences, pre_data, post_data, panels=['original', 'pointwise'])
     plot_mock.assert_called_once()
-    plot_mock.return_value.figure.assert_called_with(figsize=(15, 12))
+    plot_mock.return_value.figure.assert_called_with(figsize=(10, 7))
     ax_mock = plot_mock.return_value.subplot.return_value
     assert ax_mock.plot.call_count == 3
     assert ax_mock.axvline.call_count == 2
@@ -618,7 +627,7 @@ def test_plot_multi_panels(rand_data, pre_int_period, post_int_period, inference
     ax_mock.reset_mock()
     plotter.plot(inferences, pre_data, post_data, panels=['original', 'cumulative'])
     plot_mock.assert_called_once()
-    plot_mock.return_value.figure.assert_called_with(figsize=(15, 12))
+    plot_mock.return_value.figure.assert_called_with(figsize=(10, 7))
     ax_mock = plot_mock.return_value.subplot.return_value
     assert ax_mock.plot.call_count == 3
     assert ax_mock.axvline.call_count == 2
@@ -633,7 +642,7 @@ def test_plot_multi_panels(rand_data, pre_int_period, post_int_period, inference
     plotter.plot(inferences, pre_data, post_data, panels=['original', 'pointwise',
                  'cumulative'])
     plot_mock.assert_called_once()
-    plot_mock.return_value.figure.assert_called_with(figsize=(15, 12))
+    plot_mock.return_value.figure.assert_called_with(figsize=(10, 7))
     ax_mock = plot_mock.return_value.subplot.return_value
     assert ax_mock.plot.call_count == 4
     assert ax_mock.axvline.call_count == 3
@@ -643,12 +652,11 @@ def test_plot_multi_panels(rand_data, pre_int_period, post_int_period, inference
     assert ax_mock.axhline.call_count == 2
     assert plot_mock.return_value.setp.call_count == 2
 
-
     plot_mock.reset_mock()
     ax_mock.reset_mock()
     plotter.plot(inferences, pre_data, post_data, panels=['pointwise', 'cumulative'])
     plot_mock.assert_called_once()
-    plot_mock.return_value.figure.assert_called_with(figsize=(15, 12))
+    plot_mock.return_value.figure.assert_called_with(figsize=(10, 7))
     ax_mock = plot_mock.return_value.subplot.return_value
     assert ax_mock.plot.call_count == 2
     assert ax_mock.axvline.call_count == 2
@@ -657,51 +665,6 @@ def test_plot_multi_panels(rand_data, pre_int_period, post_int_period, inference
     assert ax_mock.fill_between.call_count == 2
     assert ax_mock.axhline.call_count == 2
     assert plot_mock.return_value.setp.call_count == 1
-
-
-
-#    ci.plot(panels=['original', 'cumulative'], figsize=(10, 10))
-#    plot_mock.assert_called_once()
-#    plotter_mock.figure.assert_called_with(figsize=(10, 10))
-#    plotter_mock.subplot.assert_any_call(2, 1, 1)
-#    plotter_mock.subplot.assert_any_call(2, 1, 2, sharex=ax_mock)
-#    plotter_mock.setp.assert_called_once_with('xticklabels', visible=False)
-#    assert ax_mock.plot.call_count == 3
-#    plotter_mock.show.assert_called_once()
-#
-#    ax_mock.reset_mock()
-#    plot_mock.reset_mock()
-#    plot_mock.reset_mock()
-#
-#    ci.plot(panels=['pointwise', 'cumulative'], figsize=(10, 10))
-#    plot_mock.assert_called_once()
-#    plotter_mock.figure.assert_called_with(figsize=(10, 10))
-#    plotter_mock.subplot.assert_any_call(2, 1, 1, sharex=ax_mock)
-#    plotter_mock.subplot.assert_any_call(2, 1, 2, sharex=ax_mock)
-#    plotter_mock.setp.assert_called_once_with('xticklabels', visible=False)
-#    assert ax_mock.plot.call_count == 2
-#    plotter_mock.show.assert_called_once()
-#
-#    ax_mock.reset_mock()
-#    plot_mock.reset_mock()
-#    plot_mock.reset_mock()
-#
-#    ci.plot(panels=['pointwise', 'cumulative', 'original'], figsize=(10, 10))
-#    plot_mock.assert_called_once()
-#    plotter_mock.figure.assert_called_with(figsize=(10, 10))
-#    plotter_mock.subplot.assert_any_call(3, 1, 1)
-#    plotter_mock.subplot.assert_any_call(3, 1, 2, sharex=ax_mock)
-#    plotter_mock.subplot.assert_any_call(3, 1, 3, sharex=ax_mock)
-#    plotter_mock.setp.assert_called_with('xticklabels', visible=False)
-#    assert ax_mock.plot.call_count == 4
-#    plotter_mock.show.assert_called_once()
-#    fig_mock.text.assert_called_once_with(
-#        0.1,
-#        0.01,
-#        ('Note: The first 1 observations were removed due to approximate diffuse '
-#         'initialization.'),
-#        fontsize='large'
-#    )
 
 
 def test_plot_raises_wrong_input_panel(rand_data, pre_int_period, post_int_period,

@@ -19,8 +19,8 @@ Summarizes performance information inferred in post-inferences compilation proce
 
 
 import os
-import pandas as pd
 
+import pandas as pd
 from jinja2 import Template
 
 from causalimpact.misc import get_z_score

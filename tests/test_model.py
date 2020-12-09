@@ -13,16 +13,14 @@
 # limitations under the License.
 
 
-import pytest
 import mock
-import pandas as pd
 import numpy as np
+import pandas as pd
+import pytest
 import tensorflow as tf
-
 import tensorflow_probability as tfp
 
 import causalimpact.model as cimodel
-
 
 tfd = tfp.distributions
 

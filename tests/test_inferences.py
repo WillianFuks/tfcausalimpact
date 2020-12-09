@@ -17,7 +17,6 @@ import numpy as np
 import pandas as pd
 import tensorflow as tf
 
-
 import causalimpact.inferences as inferrer
 from causalimpact.misc import get_z_score, maybe_unstandardize
 

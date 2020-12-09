@@ -19,13 +19,13 @@ creation.
 """
 
 
-import pandas as pd
+from typing import Any, Dict, List, Optional, Tuple, Union
+
 import numpy as np
-
-from typing import Dict, Any, Union, Tuple, List, Optional
-
+import pandas as pd
 import tensorflow as tf
 import tensorflow_probability as tfp
+
 tfd = tfp.distributions
 tfb = tfp.bijectors
 

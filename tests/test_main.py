@@ -228,3 +228,11 @@ def test_default_causal_cto_vi_method(rand_data, pre_int_period, post_int_period
     assert ci.model_args['niter'] == 1000
     assert ci.model_samples is not None
     assert ci.model_kernel_results is None
+
+
+def test_causal_impact_google_data(fix_path):
+    data = pd.read_csv(f'{fix_path}/google_data.csv', index_col=['date'])
+    pre_period = ['20200101', '20200301']
+    post_period = ['20200302', '20200331']
+    ci = CausalImpact(data, pre_period, post_period)
+    assert int(ci.summary_data['average']['actual']) == 156

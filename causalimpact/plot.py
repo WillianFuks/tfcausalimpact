@@ -26,7 +26,7 @@ def plot(
     pre_data: pd.DataFrame,
     post_data: pd.DataFrame,
     panels=['original', 'pointwise', 'cumulative'],
-    figsize=(15, 12)
+    figsize=(10, 7)
 ):
     """Plots inferences results related to causal impact analysis.
 
@@ -76,7 +76,7 @@ def plot(
             ls='dashed',
             label='Predicted'
         )
-        ax.axvline(pre_post_index[intervention_idx - 1], c='k', linestyle='--')
+        ax.axvline(pre_post_index[intervention_idx - 1], c='gray', linestyle='--')
         ax.fill_between(
             pre_post_index[1:],
             inferences['complete_preds_lower'].iloc[1:],
@@ -84,8 +84,8 @@ def plot(
             color=color,
             alpha=0.2
         )
-        ax.grid(True, linestyle='--')
         ax.legend()
+        ax.grid(True, color='gainsboro')
         if idx != n_panels:
             plt.setp(ax.get_xticklabels(), visible=False)
         idx += 1
@@ -98,7 +98,7 @@ def plot(
             color='orangered',
             label='Point Effects'
         )
-        ax.axvline(pre_post_index[intervention_idx - 1], c='k', linestyle='--')
+        ax.axvline(pre_post_index[intervention_idx - 1], c='gray', linestyle='--')
         ax.fill_between(
             pre_post_index[1:],
             inferences['point_effects_lower'].iloc[1:],
@@ -106,9 +106,9 @@ def plot(
             color=color,
             alpha=0.2
         )
-        ax.axhline(y=0, color='k', linestyle='--')
-        ax.grid(True, linestyle='--')
+        ax.axhline(y=0, color='gray')
         ax.legend()
+        ax.grid(True, color='gainsboro')
         if idx != n_panels:
             plt.setp(ax.get_xticklabels(), visible=False)
         idx += 1
@@ -121,7 +121,7 @@ def plot(
             color='orangered',
             label='Cumulative Effect'
         )
-        ax.axvline(pre_post_index[intervention_idx - 1], c='k', linestyle='--')
+        ax.axvline(pre_post_index[intervention_idx - 1], c='gray', linestyle='--')
         ax.fill_between(
             pre_post_index[1:],
             inferences['post_cum_effects_lower'].iloc[1:],
@@ -129,9 +129,9 @@ def plot(
             color=color,
             alpha=0.2
         )
-        ax.grid(True, linestyle='--')
-        ax.axhline(y=0, color='k', linestyle='--')
+        ax.axhline(y=0, color='gray', linestyle='--')
         ax.legend()
+        ax.grid(True, color='gainsboro')
     plt.show()
 
 

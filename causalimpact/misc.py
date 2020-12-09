@@ -16,10 +16,10 @@
 """Miscellaneous functions to help in the implementation of Causal Impact."""
 
 
-from typing import Tuple, Optional
+from typing import Optional, Tuple
 
-import scipy.stats as stats
 import pandas as pd
+import scipy.stats as stats
 
 
 def standardize(data: pd.DataFrame) -> Tuple[pd.DataFrame, Tuple[float, float]]:

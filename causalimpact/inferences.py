@@ -19,15 +19,14 @@ plotting functionalities.
 """
 
 
+from typing import List, Optional, Tuple, Union
+
 import numpy as np
 import pandas as pd
-import tensorflow_probability as tfp
 import tensorflow as tf
-
-from typing import List, Tuple, Optional, Union
+import tensorflow_probability as tfp
 
 from causalimpact.misc import get_z_score, maybe_unstandardize
-
 
 tfd = tfp.distributions
 

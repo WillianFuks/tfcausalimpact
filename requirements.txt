@@ -5,3 +5,4 @@ tensorflow-probability
 pytest
 pytest-cov
 pytest-xdist
+tox

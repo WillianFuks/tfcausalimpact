@@ -17,15 +17,17 @@
 Main class definition for running Causal Impact analysis.
 """
 
+from typing import Any, Dict, List, Optional, Union
+
 import numpy as np
 import pandas as pd
 import tensorflow_probability as tfp
+
 import causalimpact.data as cidata
-import causalimpact.model as cimodel
 import causalimpact.inferences as inferrer
-import causalimpact.summary as summarizer
+import causalimpact.model as cimodel
 import causalimpact.plot as plotter
-from typing import Union, List, Dict, Any, Optional
+import causalimpact.summary as summarizer
 from causalimpact.misc import maybe_unstandardize
 
 
@@ -198,7 +200,7 @@ class CausalImpact():
 
     def plot(self, panels=['original', 'pointwise', 'cumulative'], figsize=(15, 12)):
         plotter.plot(self.inferences, self.pre_data, self.post_data, panels=panels,
-                figsize=figsize)
+                     figsize=figsize)
 
     def summary(self, output: str = 'summary', digits: int = 2) -> str:
         """
