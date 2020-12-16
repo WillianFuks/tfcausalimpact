@@ -19,6 +19,7 @@ of this file.
 """
 
 
+import mock
 import numpy as np
 import pandas as pd
 import pytest
@@ -178,7 +179,53 @@ def test_causal_cto_with_seasons(date_rand_data, pre_str_period, post_str_period
     assert seasonal_component.num_steps_per_season == 2
 
 
-@pytest.mark.slow
+def test_plotter(monkeypatch, rand_data, pre_int_period, post_int_period):
+    plotter_mock = mock.Mock()
+    fit_mock = mock.Mock()
+    process_mock = mock.Mock()
+    summarize_mock = mock.Mock()
+    monkeypatch.setattr('causalimpact.main.CausalImpact._fit_model', fit_mock)
+    monkeypatch.setattr('causalimpact.main.CausalImpact._summarize_inferences',
+                        summarize_mock)
+    monkeypatch.setattr('causalimpact.main.CausalImpact._process_posterior_inferences',
+                        process_mock)
+    monkeypatch.setattr('causalimpact.main.plotter', plotter_mock)
+    ci = CausalImpact(rand_data, pre_int_period, post_int_period,
+                      model_args={'fit_method': 'vi'})
+    ci.inferences = 'inferences'
+    ci.pre_data = 'pre_data'
+    ci.post_data = 'post_data'
+    ci.plot()
+    plotter_mock.plot.assert_called_with('inferences', 'pre_data', 'post_data',
+                                         panels=['original', 'pointwise', 'cumulative'],
+                                         figsize=(10, 7))
+
+
+def test_summarizer(monkeypatch, rand_data, pre_int_period, post_int_period):
+    summarizer_mock = mock.Mock()
+    fit_mock = mock.Mock()
+    process_mock = mock.Mock()
+    summarize_mock = mock.Mock()
+    monkeypatch.setattr('causalimpact.main.CausalImpact._fit_model', fit_mock)
+    monkeypatch.setattr('causalimpact.main.CausalImpact._summarize_inferences',
+                        summarize_mock)
+    monkeypatch.setattr('causalimpact.main.CausalImpact._process_posterior_inferences',
+                        process_mock)
+    monkeypatch.setattr('causalimpact.main.summarizer', summarizer_mock)
+    ci = CausalImpact(rand_data, pre_int_period, post_int_period,
+                      model_args={'fit_method': 'vi'})
+    ci.summary_data = 'summary_data'
+    ci.p_value = 0.5
+    ci.alpha = 0.05
+    ci.summary()
+    summarizer_mock.summary.assert_called_with('summary_data', 0.5, 0.05, 'summary', 2)
+
+    with pytest.raises(ValueError) as excinfo:
+        ci.summary(digits='1')
+    assert str(excinfo.value) == ('Input value for digits must be integer. Received '
+                                  '"<class \'str\'>" instead.')
+
+
 def test_causal_cto_with_custom_model_and_seasons(rand_data, pre_int_period,
                                                   post_int_period):
     pre_data = rand_data.loc[pre_int_period[0]: pre_int_period[1], :]
@@ -200,7 +247,6 @@ def test_causal_cto_with_custom_model_and_seasons(rand_data, pre_int_period,
     assert ci.inferences.index.dtype == rand_data.index.dtype
 
 
-@pytest.mark.slow
 def test_default_causal_cto_vi_method(rand_data, pre_int_period, post_int_period):
     ci = CausalImpact(rand_data, pre_int_period, post_int_period, model_args=dict(
         fit_method='vi'))
