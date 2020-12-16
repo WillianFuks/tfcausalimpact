@@ -30,8 +30,8 @@ if sys.argv[-1] == 'publish':
 install_requires = [
     'jinja2',
     'pandas',
-    'tensorflow>=2.3.0',
-    'tensorflow-probability>=0.11.0',
+    'tensorflow',
+    'tensorflow-probability',
     'numpy',
     'scipy',
     'matplotlib',
