@@ -1,4 +1,4 @@
-# tfcausalimpact
+# tfcausalimpact [![Build Status](https://travis-ci.com/WillianFuks/tfcausalimpact.svg?branch=master)](https://travis-ci.com/WillianFuks/tfcausalimpact) [![Coverage Status](https://coveralls.io/repos/github/WillianFuks/tfcausalimpact/badge.svg?branch=master)](https://coveralls.io/github/WillianFuks/tfcausalimpact?branch=master) [![GitHub license](https://img.shields.io/github/license/WillianFuks/tfcausalimpact.svg)](https://github.com/WillianFuks/tfcausalimpact/blob/master/LICENSE) [![PyPI version](https://badge.fury.io/py/tfcausalimpact.svg)](https://badge.fury.io/py/tfcausalimpact) [![Pyversions](https://img.shields.io/pypi/pyversions/tfcausalimpact.svg)](https://pypi.python.org/pypi/tfcausalimpact)
 Google's [Causal Impact](https://github.com/google/CausalImpact) Algorithm Implemented on Top of [Tensorflow Probability](https://github.com/tensorflow/probability).
 
 ## How It Works
