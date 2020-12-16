@@ -1,0 +1,12 @@
+[run]
+branch = True
+include =
+    causalimpact/*
+omit =
+    tests/*
+    causalimpact/__version__.py
+
+
+[report]
+exclude_lines =
+    pragma: no cover
