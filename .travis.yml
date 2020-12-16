@@ -1,5 +1,4 @@
 language: python
-cache: pip
 dist: xenial
 
 jobs:
@@ -24,7 +23,7 @@ jobs:
       env: TOX_ENV=travis-coveralls
 
 install:
-  - pip install -U setuptools tox
+  - pip install -U setuptools tox pip
 
 script:
     tox -e $TOX_ENV
