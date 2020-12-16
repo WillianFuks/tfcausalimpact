@@ -59,8 +59,8 @@ def process_model_args(model_args: Dict[str, Any]) -> Dict[str, Any]:
             Which method to use when fitting the structural time series model. Can be
             either `hmc` which stands for "Hamiltonian Monte Carlo" or "vi", i.e.,
             "variational inference". The first is slower but more accurate whilst the
-            latter is the opposite. Defaults to `hmc` which prioritizes accuracy.
-       nseasons: int
+            latter is the opposite. Defaults to `vi` which prioritizes performance.
+        nseasons: int
             Specifies the duration of the period of the seasonal component; if input
             data is specified in terms of days, then choosing nseasons=7 adds a weekly
             seasonal effect.
@@ -109,7 +109,7 @@ def process_model_args(model_args: Dict[str, Any]) -> Dict[str, Any]:
         raise ValueError('niter argument must be of type int.')
     model_args['niter'] = niter
 
-    fit_method = model_args.get('fit_method', 'hmc')
+    fit_method = model_args.get('fit_method', 'vi')
     if fit_method not in {'hmc', 'vi'}:
         raise ValueError('fit_method can be either "hmc" or "vi".')
     model_args['fit_method'] = fit_method

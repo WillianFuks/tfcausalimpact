@@ -2,11 +2,13 @@
 Google's [Causal Impact](https://github.com/google/CausalImpact) Algorithm Implemented on Top of [Tensorflow Probability](https://github.com/tensorflow/probability).
 
 ## How It Works
-The algorithm basically fits a [Bayesian structural](https://en.wikipedia.org/wiki/Bayesian_structural_time_series) model on past observed data to make predictions on what future data would look like. Past data comprises everything that happened before an intervention (which usually is the changing of a variable as being present or not, such as a Marketing campaign that starts to run at a given point). It then compares the counter-factual (predicted) series against what was really observed in order to extract statistical conclusions about the impact that the variable under investigation causes on the response data.
+The algorithm basically fits a [Bayesian structural](https://en.wikipedia.org/wiki/Bayesian_structural_time_series) model on past observed data to make predictions on what future data would look like. Past data comprises everything that happened before an intervention (which usually is the changing of a variable as being present or not, such as a marketing campaign that starts to run at a given point). It then compares the counter-factual (predicted) series against what was really observed in order to extract statistical conclusions.
 
-Running the model is quite straightforward, it requires the observed data `y`, covariates `X` that helps explain `y` through a linear regression, a `pre-period` interval that selects everything that happened before the intervention and a `post-period` variable so to compare before versus after intervention.
+Running the model is quite straightforward, it requires the observed data `y`, covariates `X` that helps the model through a linear regression, a `pre-period` interval that selects everything that happened before the intervention and a `post-period` with data after the "impact" happened.
 
-It's important to keep in mind the main assumptions that this model makes in order ot run successfully: first and foremost, it's crucial that the covariates `X` are not affected by the variable being manipulated as otherwise it'll lead to wrong conclusions. In the example of the Marketing campaign, the covariates can be anything that might indicate a linear relationship with *Sales* and that won't be affect by the same campaign.
+It's important to keep in mind the main assumptions that this model makes in order ot run successfully:
+ - First and foremost, it's crucial that the covariates `X` are not affected by the variable being manipulated as otherwise it'll lead to wrong conclusions. In the example of the marketing campaign, the covariates can be anything that might indicate a linear relationship with *Sales* and that won't be affect by the very same campaign.
+ - The structural time series model used to fit observed data should be a good predictor for post-intervention period. Testing this assumption is also a good practice (this can be accomplished through back-testing. Please refer to this medium post for more on this subject).
 
 ## Installation
 
@@ -14,19 +16,19 @@ It's important to keep in mind the main assumptions that this model makes in ord
 
 ## Requirements
 
- - python{3.6, 3.7, 3.8, 3.9}
+ - python{3.6, 3.7, 3.8}
  - numpy
  - matplotlib
  - jinja2
  - tensorflow>=2.3.0
- - tensorflow_probability>=0.11.1
+ - tensorflow_probability>=0.11.0
 
 
 ## Getting Started
 
 We recommend this [presentation](https://www.youtube.com/watch?v=GTgZfCltMm8) by Kay Brodersen (one of the creators of the Causal Impact in R).
 
-We also created this introductory [ipython notebook]() with examples of how to use this package.
+We also created this introductory [ipython notebook](https://github.com/WillianFuks/tfcausalimpact/blob/master/notebooks/getting_started.ipynb) with examples of how to use this package.
 
 This medium article also offers some ideas and concepts behind the library.
 
@@ -74,7 +76,7 @@ For more details run the command: print(impact.summary('report'))
 
 And here's the plot graphic:
 
-![alt text](notebooks/tfcausal_plot_example.png)
+![alt text](https://raw.githubusercontent.com/WillianFuks/tfcausalimpact/master/notebooks/tfcausal_plot_example.png)
 
 ## Google R Package vs TensorFlow Python
 
@@ -113,7 +115,7 @@ For more details, type: summary(impact, "report")
 
 And correspondent plot:
 
-![alt text](notebooks/R/comparison/Rplot.png)
+![alt text](https://raw.githubusercontent.com/WillianFuks/tfcausalimpact/master/notebooks/R/comparison/Rplot.png)
 
 ### Python
 
@@ -125,7 +127,7 @@ from causalimpact import CausalImpact
 data = pd.read_csv('tests/fixtures/comparison_data.csv', index_col=['DATE'])
 pre_period = ['2019-04-16', '2019-07-14']
 post_period = ['2019-7-15', '2019-08-01']
-ci = CausalImpact(data, pre_period, post_period)
+ci = CausalImpact(data, pre_period, post_period, model_args={'fit_method': 'hmc'})
 ```
 
 Summary is:
@@ -151,19 +153,21 @@ For more details run the command: print(impact.summary('report'))
 
 And plot:
 
-![alt text](notebooks/R/comparison/Pythonplot.png)
+![alt text](https://raw.githubusercontent.com/WillianFuks/tfcausalimpact/master/notebooks/R/comparison/Pythonplot.png)
 
 Both results are equivalent.
 
 ## Performance
 
-You may find that the default optimizer method [`Hamiltonian Monte Carlo`](https://en.wikipedia.org/wiki/Hamiltonian_Monte_Carlo) may take some time to fit your data (in the range of 2 or 3 minutes, sometimes even more). If you find that this is too much and want a faster (but with a small decrease in precision) algorithm, you can switch to [Variational Inference](https://en.wikipedia.org/wiki/Variational_Bayesian_methods) method like so:
+This package uses as default the [`Variational Inference`](https://en.wikipedia.org/wiki/Variational_Bayesian_methods) method from `TensorFlow Probability` which is faster and should work for the most part. Convergence can take somewhere between 2~3 minutes on more complex time series. Also, consider using a GPU to run even faster.
+
+If, on the other hand, precision is the top requirement when running causal impact analyzes, it's possible to switch algorithms by manipulating the input arguments like so:
 
 ```python
-ci = CausalImpact(data, pre_period, post_period, model_args={'fit_method': 'vi'})
+ci = CausalImpact(data, pre_period, post_period, model_args={'fit_method': 'hmc'})
 ```
 
-As the library is built on top of TensorFlow, running it on top of GPU can also speed up the process.
+This will make usage of the algorithm [`Hamiltonian Monte Carlo`](https://en.wikipedia.org/wiki/Hamiltonian_Monte_Carlo) which is State-of-the-Art for finding the Bayesian posterior of distributions. Still, keep in mind that on complex time series with thousands of data points and complex modeling involving various seasonal components this optimization can take 1 hour or even more to complete (on a GPU). Performance is sacrificed in exchange of better precision.
 
 ## Bugs & Issues
 

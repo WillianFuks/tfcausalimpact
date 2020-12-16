@@ -63,7 +63,7 @@ def test_process_model_args():
     assert model_args['fit_method'] == 'vi'
 
     model_args = cimodel.process_model_args(dict())
-    assert model_args['fit_method'] == 'hmc'
+    assert model_args['fit_method'] == 'vi'
 
     with pytest.raises(ValueError) as excinfo:
         model_args = cimodel.process_model_args(dict(fit_method='test'))

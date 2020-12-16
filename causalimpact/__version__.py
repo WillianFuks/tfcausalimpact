@@ -13,5 +13,5 @@
 # limitations under the License.
 
 
-VERSION = (0, 0, 0)
+VERSION = (0, 0, 0, 'a0')
 __version__ = '.'.join([str(e) for e in VERSION])

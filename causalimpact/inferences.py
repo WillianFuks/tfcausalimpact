@@ -105,11 +105,12 @@ def compile_posterior_inferences(
     pre_preds_stds = one_step_dist.stddev()
     # First points in predictions of pre-data can be quite noisy due the lack of observed
     # data coming before these points. We try to remove those by applying a filter that
-    # removes 2 standard deviations of all predicted points and replace those with `nan`.
+    # removes all points that falls above 3 standard deviations from the 50% quantile of
+    # the array of standard deviations for predictions, replacing those with `np.nan`.
     pre_preds_stds = tf.where(
         tf.math.greater(
             tf.abs(pre_preds_stds),
-            tf.math.reduce_mean(pre_preds_stds) + 2 * tf.math.reduce_std(pre_preds_stds)
+            np.quantile(pre_preds_stds, 0.5) + 3 * tf.math.reduce_std(pre_preds_stds)
         ),
         np.nan,
         pre_preds_stds
