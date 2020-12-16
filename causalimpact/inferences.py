@@ -89,20 +89,31 @@ def compile_posterior_inferences(
     """
     lower_percen, upper_percen = get_lower_upper_percentiles(alpha)
     z_score = get_z_score(1 - alpha / 2)
-    # Integrates pre and post index for cumulative index data
+    # Integrates pre and post index for cumulative index data.
     cum_index = build_cum_index(pre_data.index, post_data.index)
     # We create a pd.Series with a single 0 (zero) value to work as the initial value
     # when computing the cumulative inferences. Without this value the plotting of
-    # cumulative data breaks at the initial point
+    # cumulative data breaks at the initial point.
     zero_series = pd.Series([0])
     simulated_ys = posterior_dist.sample(niter)  # shape (niter, n_forecasts, 1)
     simulated_ys = maybe_unstandardize(
         np.squeeze(simulated_ys.numpy()),
         mu_sig
     )  # shape (niter, n_forecasts)
-    # pre inference
+    # Pre inference
     pre_preds_means = one_step_dist.mean()
     pre_preds_stds = one_step_dist.stddev()
+    # First points in predictions of pre-data can be quite noisy due the lack of observed
+    # data coming before these points. We try to remove those by applying a filter that
+    # removes 2 standard deviations of all predicted points and replace those with `nan`.
+    pre_preds_stds = tf.where(
+        tf.math.greater(
+            tf.abs(pre_preds_stds),
+            tf.math.reduce_mean(pre_preds_stds) + 2 * tf.math.reduce_std(pre_preds_stds)
+        ),
+        np.nan,
+        pre_preds_stds
+    )
     pre_preds_lower = pd.Series(
         np.squeeze(
             maybe_unstandardize(pre_preds_means - z_score * pre_preds_stds, mu_sig)
@@ -178,7 +189,7 @@ def compile_posterior_inferences(
         index=cum_index
     )
     # Using a net value of data to accomodate cases where there're gaps between pre
-    # and post intervention periods
+    # and post intervention periods.
     net_data = pd.concat([pre_data, post_data])
     # Point effects
     point_effects_means = net_data.iloc[:, 0] - complete_preds_means
@@ -194,7 +205,7 @@ def compile_posterior_inferences(
         [lower_percen, upper_percen],
         axis=0
     )
-    # Sets index properly
+    # Sets index properly.
     post_cum_effects_lower = pd.Series(
         np.squeeze(
             np.concatenate([[0], post_cum_effects_lower])

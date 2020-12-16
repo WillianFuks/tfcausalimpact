@@ -105,7 +105,7 @@ def maybe_unstandardize(
     return unstandardize(data, mu_sig)
 
 
-def get_z_score(p):
+def get_z_score(p: float) -> float:
     """
     Returns the correspondent z-score with probability area p.
 

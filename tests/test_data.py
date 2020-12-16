@@ -140,7 +140,9 @@ def test_process_pre_post_data(rand_data, date_rand_data):
 
     with pytest.raises(ValueError) as excinfo:
         cidata.process_pre_post_data(rand_data, [0, 5.5], [15, 11])
-    assert str(excinfo.value) == 'Input must contain either int, str or pandas Timestamp'
+    assert str(excinfo.value) == (
+        'Input periods must contain either int, str or pandas Timestamp'
+    )
 
     with pytest.raises(ValueError) as excinfo:
         cidata.process_pre_post_data(rand_data, [-2, 10], [11, 20])

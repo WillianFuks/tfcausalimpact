@@ -75,7 +75,7 @@ def test_plot_original_panel(rand_data, pre_int_period, post_int_period, inferen
     assert_array_equal(ax_args[0][0], pre_post_index[1:])
     assert_array_equal(ax_args[0][1], inferences['complete_preds_lower'].iloc[1:])
     assert_array_equal(ax_args[0][2], inferences['complete_preds_upper'].iloc[1:])
-    assert ax_args[1] == {'color': (1.0, 0.4981, 0.0549), 'alpha': 0.2}
+    assert ax_args[1] == {'color': (1.0, 0.4981, 0.0549), 'alpha': 0.4}
 
     ax_mock.grid.assert_called_with(True, color='gainsboro')
     ax_mock.legend.assert_called()
@@ -113,7 +113,7 @@ def test_plot_original_panel_gap_data(rand_data, pre_int_gap_period, post_int_ga
     assert_array_equal(ax_args[0][0], pre_post_index[1:])
     assert_array_equal(ax_args[0][1], inferences['complete_preds_lower'].iloc[1:])
     assert_array_equal(ax_args[0][2], inferences['complete_preds_upper'].iloc[1:])
-    assert ax_args[1] == {'color': (1.0, 0.4981, 0.0549), 'alpha': 0.2}
+    assert ax_args[1] == {'color': (1.0, 0.4981, 0.0549), 'alpha': 0.4}
 
     ax_mock.grid.assert_called_with(True, color='gainsboro')
     ax_mock.legend.assert_called()
@@ -153,7 +153,7 @@ def test_plot_original_panel_date_index(date_rand_data, pre_str_period, post_str
     assert_array_equal(ax_args[0][0], pre_post_index[1:])
     assert_array_equal(ax_args[0][1], inferences['complete_preds_lower'].iloc[1:])
     assert_array_equal(ax_args[0][2], inferences['complete_preds_upper'].iloc[1:])
-    assert ax_args[1] == {'color': (1.0, 0.4981, 0.0549), 'alpha': 0.2}
+    assert ax_args[1] == {'color': (1.0, 0.4981, 0.0549), 'alpha': 0.4}
 
     ax_mock.grid.assert_called_with(True, color='gainsboro')
     ax_mock.legend.assert_called()
@@ -194,7 +194,7 @@ def test_plot_original_panel_gap_date_index(date_rand_data, pre_str_gap_period,
     assert_array_equal(ax_args[0][0], pre_post_index[1:])
     assert_array_equal(ax_args[0][1], inferences['complete_preds_lower'].iloc[1:])
     assert_array_equal(ax_args[0][2], inferences['complete_preds_upper'].iloc[1:])
-    assert ax_args[1] == {'color': (1.0, 0.4981, 0.0549), 'alpha': 0.2}
+    assert ax_args[1] == {'color': (1.0, 0.4981, 0.0549), 'alpha': 0.4}
 
     ax_mock.grid.assert_called_with(True, color='gainsboro')
     ax_mock.legend.assert_called()
@@ -237,7 +237,7 @@ def test_plot_original_panel_date_index_no_freq(date_rand_data, pre_str_period,
     assert_array_equal(ax_args[0][0], pre_post_index[1:])
     assert_array_equal(ax_args[0][1], inferences['complete_preds_lower'].iloc[1:])
     assert_array_equal(ax_args[0][2], inferences['complete_preds_upper'].iloc[1:])
-    assert ax_args[1] == {'color': (1.0, 0.4981, 0.0549), 'alpha': 0.2}
+    assert ax_args[1] == {'color': (1.0, 0.4981, 0.0549), 'alpha': 0.4}
 
     ax_mock.grid.assert_called_with(True, color='gainsboro')
     ax_mock.legend.assert_called()
@@ -271,7 +271,7 @@ def test_plot_pointwise_panel(rand_data, pre_int_period, post_int_period, infere
     assert_array_equal(ax_args[0][0], pre_post_index[1:])
     assert_array_equal(ax_args[0][1], inferences['point_effects_lower'].iloc[1:])
     assert_array_equal(ax_args[0][2], inferences['point_effects_upper'].iloc[1:])
-    assert ax_args[1] == {'color': (1.0, 0.4981, 0.0549), 'alpha': 0.2}
+    assert ax_args[1] == {'color': (1.0, 0.4981, 0.0549), 'alpha': 0.4}
 
     ax_mock.grid.assert_called_with(True, color='gainsboro')
     ax_mock.legend.assert_called()
@@ -306,7 +306,7 @@ def test_plot_pointwise_panel_gap_data(rand_data, pre_int_gap_period,
     assert_array_equal(ax_args[0][0], pre_post_index[1:])
     assert_array_equal(ax_args[0][1], inferences['point_effects_lower'].iloc[1:])
     assert_array_equal(ax_args[0][2], inferences['point_effects_upper'].iloc[1:])
-    assert ax_args[1] == {'color': (1.0, 0.4981, 0.0549), 'alpha': 0.2}
+    assert ax_args[1] == {'color': (1.0, 0.4981, 0.0549), 'alpha': 0.4}
 
     ax_mock.grid.assert_called_with(True, color='gainsboro')
     ax_mock.legend.assert_called()
@@ -342,7 +342,7 @@ def test_plot_pointwise_panel_date_index(date_rand_data, pre_str_period, post_st
     assert_array_equal(ax_args[0][0], pre_post_index[1:])
     assert_array_equal(ax_args[0][1], inferences['point_effects_lower'].iloc[1:])
     assert_array_equal(ax_args[0][2], inferences['point_effects_upper'].iloc[1:])
-    assert ax_args[1] == {'color': (1.0, 0.4981, 0.0549), 'alpha': 0.2}
+    assert ax_args[1] == {'color': (1.0, 0.4981, 0.0549), 'alpha': 0.4}
 
     ax_mock.grid.assert_called_with(True, color='gainsboro')
     ax_mock.legend.assert_called()
@@ -379,7 +379,7 @@ def test_plot_pointwise_panel_gap_date_index(date_rand_data, pre_str_gap_period,
     assert_array_equal(ax_args[0][0], pre_post_index[1:])
     assert_array_equal(ax_args[0][1], inferences['point_effects_lower'].iloc[1:])
     assert_array_equal(ax_args[0][2], inferences['point_effects_upper'].iloc[1:])
-    assert ax_args[1] == {'color': (1.0, 0.4981, 0.0549), 'alpha': 0.2}
+    assert ax_args[1] == {'color': (1.0, 0.4981, 0.0549), 'alpha': 0.4}
 
     ax_mock.grid.assert_called_with(True, color='gainsboro')
     ax_mock.legend.assert_called()
@@ -418,7 +418,7 @@ def test_plot_pointwise_panel_date_index_no_freq(date_rand_data, pre_str_period,
     assert_array_equal(ax_args[0][0], pre_post_index[1:])
     assert_array_equal(ax_args[0][1], inferences['point_effects_lower'].iloc[1:])
     assert_array_equal(ax_args[0][2], inferences['point_effects_upper'].iloc[1:])
-    assert ax_args[1] == {'color': (1.0, 0.4981, 0.0549), 'alpha': 0.2}
+    assert ax_args[1] == {'color': (1.0, 0.4981, 0.0549), 'alpha': 0.4}
 
     ax_mock.grid.assert_called_with(True, color='gainsboro')
     ax_mock.legend.assert_called()
@@ -452,7 +452,7 @@ def test_plot_cumulative_panel(rand_data, pre_int_period, post_int_period, infer
     assert_array_equal(ax_args[0][0], pre_post_index[1:])
     assert_array_equal(ax_args[0][1], inferences['post_cum_effects_lower'].iloc[1:])
     assert_array_equal(ax_args[0][2], inferences['post_cum_effects_upper'].iloc[1:])
-    assert ax_args[1] == {'color': (1.0, 0.4981, 0.0549), 'alpha': 0.2}
+    assert ax_args[1] == {'color': (1.0, 0.4981, 0.0549), 'alpha': 0.4}
 
     ax_mock.grid.assert_called_with(True, color='gainsboro')
     ax_mock.legend.assert_called()
@@ -486,7 +486,7 @@ def test_plot_cumulative_panel_gap_data(rand_data, pre_int_gap_period,
     assert_array_equal(ax_args[0][0], pre_post_index[1:])
     assert_array_equal(ax_args[0][1], inferences['post_cum_effects_lower'].iloc[1:])
     assert_array_equal(ax_args[0][2], inferences['post_cum_effects_upper'].iloc[1:])
-    assert ax_args[1] == {'color': (1.0, 0.4981, 0.0549), 'alpha': 0.2}
+    assert ax_args[1] == {'color': (1.0, 0.4981, 0.0549), 'alpha': 0.4}
 
     ax_mock.grid.assert_called_with(True, color='gainsboro')
     ax_mock.legend.assert_called()
@@ -522,7 +522,7 @@ def test_plot_cumulative_panel_date_index(date_rand_data, pre_str_period,
     assert_array_equal(ax_args[0][0], pre_post_index[1:])
     assert_array_equal(ax_args[0][1], inferences['post_cum_effects_lower'].iloc[1:])
     assert_array_equal(ax_args[0][2], inferences['post_cum_effects_upper'].iloc[1:])
-    assert ax_args[1] == {'color': (1.0, 0.4981, 0.0549), 'alpha': 0.2}
+    assert ax_args[1] == {'color': (1.0, 0.4981, 0.0549), 'alpha': 0.4}
 
     ax_mock.grid.assert_called_with(True, color='gainsboro')
     ax_mock.legend.assert_called()
@@ -559,7 +559,7 @@ def test_plot_cumulative_panel_gap_date_index(date_rand_data, pre_str_gap_period
     assert_array_equal(ax_args[0][0], pre_post_index[1:])
     assert_array_equal(ax_args[0][1], inferences['post_cum_effects_lower'].iloc[1:])
     assert_array_equal(ax_args[0][2], inferences['post_cum_effects_upper'].iloc[1:])
-    assert ax_args[1] == {'color': (1.0, 0.4981, 0.0549), 'alpha': 0.2}
+    assert ax_args[1] == {'color': (1.0, 0.4981, 0.0549), 'alpha': 0.4}
 
     ax_mock.grid.assert_called_with(True, color='gainsboro')
     ax_mock.legend.assert_called()
@@ -598,7 +598,7 @@ def test_plot_cumulative_panel_date_index_no_freq(date_rand_data, pre_str_period
     assert_array_equal(ax_args[0][0], pre_post_index[1:])
     assert_array_equal(ax_args[0][1], inferences['post_cum_effects_lower'].iloc[1:])
     assert_array_equal(ax_args[0][2], inferences['post_cum_effects_upper'].iloc[1:])
-    assert ax_args[1] == {'color': (1.0, 0.4981, 0.0549), 'alpha': 0.2}
+    assert ax_args[1] == {'color': (1.0, 0.4981, 0.0549), 'alpha': 0.4}
 
     ax_mock.grid.assert_called_with(True, color='gainsboro')
     ax_mock.legend.assert_called()

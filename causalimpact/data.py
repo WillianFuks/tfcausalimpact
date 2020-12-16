@@ -144,7 +144,16 @@ def process_input_data(
     }
 
 
-def _check_empty_inputs(inputs):
+def _check_empty_inputs(inputs: Dict[str, Any]) -> None:
+    """
+    Works as a validator for whether input values for Causal Impact contains empty
+    values.
+
+    Args
+    ----
+      inputs: Dict[str, Any]
+          Basically contains the `locals()` variables as received by CausalImpact.
+    """
     none_args = [arg for arg in inputs if inputs[arg] is None and arg != 'model']
     if none_args:
         raise ValueError(
@@ -274,14 +283,14 @@ def process_pre_post_data(
     return result
 
 
-def validate_y(y):
+def validate_y(y: pd.Series) -> None:
     """
     Validates if input response variable is correct and doesn't contain invalid input.
 
     Args
     ----
-      y: pd.Series.
-         Response variable sent in input data in first column.
+      y: pd.Series
+          Response variable sent in input data in first column.
 
     Raises
     ------
@@ -301,7 +310,7 @@ def validate_y(y):
         raise ValueError('Input response cannot be constant.')
 
 
-def convert_index_to_datetime(data):
+def convert_index_to_datetime(data: pd.DataFrame) -> pd.DataFrame:
     """
     If input data has index of string dates, i.e, '20200101', '20200102' and so on, try
     to convert it to datetime specifically, which results in
@@ -325,19 +334,22 @@ def convert_index_to_datetime(data):
     return data
 
 
-def process_period(period, data):
+def process_period(
+    period: Union[List[int], List[str], List[pd.Timestamp]],
+    data: pd.DataFrame
+) -> List[int]:
     """
     Validates period inputs.
 
     Args
     ----
-      period: .
+      period: Union[List[int], List[str], List[pd.Timestamp]]
       data: pd.DataFrame.
           Input Causal Impact data.
 
     Returns
     -------
-      period: list.
+      period: List[int]
           Validated period list.
 
     Raises
@@ -361,7 +373,9 @@ def process_period(period, data):
         (isinstance(period[1], str) and isinstance(period[1], str)) or
         (isinstance(period[1], pd.Timestamp) and isinstance(period[1], pd.Timestamp))
     ):
-        raise ValueError('Input must contain either int, str or pandas Timestamp')
+        raise ValueError(
+            'Input periods must contain either int, str or pandas Timestamp'
+        )
     # check whether the input period is indeed present in the input data index
     for point in period:
         if point not in data.index:
@@ -376,13 +390,16 @@ def process_period(period, data):
     return period
 
 
-def convert_date_period_to_int(period, data):
+def convert_date_period_to_int(
+    period: Union[List[int], List[str], List[pd.Timestamp]],
+    data: pd.DataFrame
+) -> List[int]:
     """
     Converts string values from `period` to integer offsets from `data`.
 
     Args
     ----
-      period: Union[List[str], List[pd.Timestamp]]
+      period: Union[List[int], List[str], List[pd.Timestamp]]
       data: pd.DataFrame
           `data` index is either a `str` of a pd.Timestamp type.
 

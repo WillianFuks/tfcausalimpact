@@ -110,6 +110,8 @@ def test_compile_posterior_inferences():
         np.array([1, 1, 1]) * one_step_mean -
         get_z_score(1 - alpha / 2) * one_step_stddev
     ) * sig + mu
+    pre_preds_lower[np.abs(pre_preds_lower) > np.mean(pre_preds_lower) +
+                    2 * np.std(pre_preds_lower)] = np.nan
     post_preds_lower = (
         np.array([1, 1, 1]) * posterior_mean -
         get_z_score(1 - alpha / 2) * posterior_stddev
@@ -130,6 +132,8 @@ def test_compile_posterior_inferences():
         np.array([1, 1, 1]) * one_step_mean +
         get_z_score(1 - alpha / 2) * one_step_stddev
     ) * sig + mu
+    pre_preds_upper[np.abs(pre_preds_upper) > np.mean(pre_preds_upper) +
+                    2 * np.std(pre_preds_upper)] = np.nan
     post_preds_upper = (
         np.array([1, 1, 1]) * posterior_mean +
         get_z_score(1 - alpha / 2) * posterior_stddev

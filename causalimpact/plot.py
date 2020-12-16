@@ -27,7 +27,7 @@ def plot(
     post_data: pd.DataFrame,
     panels=['original', 'pointwise', 'cumulative'],
     figsize=(10, 7)
-):
+) -> None:
     """Plots inferences results related to causal impact analysis.
 
     Args
@@ -82,7 +82,7 @@ def plot(
             inferences['complete_preds_lower'].iloc[1:],
             inferences['complete_preds_upper'].iloc[1:],
             color=color,
-            alpha=0.2
+            alpha=0.4
         )
         ax.legend()
         ax.grid(True, color='gainsboro')
@@ -104,7 +104,7 @@ def plot(
             inferences['point_effects_lower'].iloc[1:],
             inferences['point_effects_upper'].iloc[1:],
             color=color,
-            alpha=0.2
+            alpha=0.4
         )
         ax.axhline(y=0, color='gray')
         ax.legend()
@@ -127,7 +127,7 @@ def plot(
             inferences['post_cum_effects_lower'].iloc[1:],
             inferences['post_cum_effects_upper'].iloc[1:],
             color=color,
-            alpha=0.2
+            alpha=0.4
         )
         ax.axhline(y=0, color='gray', linestyle='--')
         ax.legend()

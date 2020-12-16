@@ -17,7 +17,7 @@
 Main class definition for running Causal Impact analysis.
 """
 
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union, Tuple
 
 import numpy as np
 import pandas as pd
@@ -114,63 +114,82 @@ class CausalImpact():
     Examples
     --------
 
-      >>> import numpy as np
-      >>> from statsmodels.tsa.statespace.structural import UnobservedComponents
-      >>> from statsmodels.tsa.arima_process import ArmaProcess
+      Imput data can be a `numpy.array`:
 
-      >>> np.random.seed(12345)
-      >>> ar = np.r_[1, 0.9]
-      >>> ma = np.array([1])
-      >>> arma_process = ArmaProcess(ar, ma)
-      >>> X = 100 + arma_process.generate_sample(nsample=100)
-      >>> y = 1.2 * X + np.random.normal(size=100)
-      >>> data = pd.DataFrame({'y': y, 'X': X}, columns=['y', 'X'])
-      >>> pre_period = [0, 69]
-      >>> post_period = [70, 99]
+      ```python
+      import numpy as np
 
-      >>> ci = CausalImpact(data, pre_period, post_period)
-      >>> ci.summary()
-      >>> ci.summary('report')
-      >>> ci.plot()
+
+      data = np.random.rand(100, 2)
+      pre_period = [0, 69]
+      post_period = [70, 99]
+
+      ci = CausalImpact(data, pre_period, post_period)
+      print(ci.summary())
+      print(ci.summary('report'))
+      ci.plot()
+      ```
 
       Using pandas DataFrames:
 
-      >>> df = pd.DataFrame(data)
-      >>> df = df.set_index(pd.date_range(start='20180101', periods=len(data)))
-      >>> pre_period = ['20180101', '20180311']
-      >>> post_period = ['20180312', '20180410']
-      >>> ci = CausalImpact(df, pre_period, post_period)
+      ```python
+      df = pd.DataFrame('tests/fixtures/arma_data.csv')
+      pre_period = [0, 69]
+      post_period = [70, 99]
+      ci = CausalImpact(df, pre_period, post_period)
+      print(ci.summary())
+      ```
 
       Using pandas DataFrames with pandas timestamps:
 
-      >>> df = pd.DataFrame(data)
-      >>> df = df.set_index(pd.date_range(start='20180101', periods=len(data)))
-      >>> pre_period = [pd.to_datetime('20180101'), pd.to_datetime('20180311')]
-      >>> post_period = [pd.to_datetime('20180312'), pd.to_datetime('20180410')]
-      >>> ci = CausalImpact(df, pre_period, post_period)
+      ```python
+      df = pd.DataFrame('tests/fixtures/arma_data.csv')
+      df = df.set_index(pd.date_range(start='20200101', periods=len(data)))
+      pre_period = [pd.to_datetime('20200101'), pd.to_datetime('20200311')]
+      post_period = [pd.to_datetime('20200312'), pd.to_datetime('20200410')]
+      ci = CausalImpact(df, pre_period, post_period)
+      print(ci.summary())
+      ```
 
-      Using automatic local level optimization:
+      Using a weekly seasonal component on daily data:
 
-      >>> df = pd.DataFrame(data)
-      >>> df = df.set_index(pd.date_range(start='20180101', periods=len(data)))
-      >>> pre_period = ['20180101', '20180311']
-      >>> post_period = ['20180312', '20180410']
-      >>> ci = CausalImpact(df, pre_period, post_period, prior_level_sd=None)
+      ```python
+      df = pd.DataFrame('tests/fixtures/arma_data.csv')
+      df = df.set_index(pd.date_range(start='20200101', periods=len(data)))
+      pre_period = ['20200101', '20200311']
+      post_period = ['20200312', '20200410']
+      ci = CausalImpact(df, pre_period, post_period, model_args={'nseasons': 7})
+      print(ci.summary())
+      ```
 
-      Using seasonal components:
+      Using a weekly seasonal component on hourly data:
 
-      >>> df = pd.DataFrame(data)
-      >>> df = df.set_index(pd.date_range(start='20180101', periods=len(data)))
-      >>> pre_period = ['20180101', '20180311']
-      >>> post_period = ['20180312', '20180410']
-      >>> ci = CausalImpact(df, pre_period, post_period, nseasons=[{'period': 7}])
+      ```python
+      df = pd.DataFrame('tests/fixtures/arma_data.csv')
+      df = df.set_index(pd.date_range(start='20200101', periods=len(data), freq='H'))
+      pre_period = ['20200101 00:00:00', '20200311 23:00:00']
+      post_period = ['20200312 00:00:00', '20200410 23:00:00']
+      ci = CausalImpact(df, pre_period, post_period, model_args={'nseasons': 7,
+                        'season_duration': 24})
+      print(ci.summary())
+      ```
 
       Using a customized model:
 
-      >>> pre_y = data[:70, 0]
-      >>> pre_X = data[:70, 1:]
-      >>> ucm = UnobservedComponents(endog=pre_y, level='llevel', exog=pre_X)
-      >>> ci = CausalImpact(data, pre_period, post_period, model=ucm)
+      ```python
+      import tensorflow_probability as tfp
+
+
+      pre_y = data[:70, 0]
+      pre_X = data[:70, 1:]
+      obs_series = data.iloc[:, 0]
+      local_linear = tfp.sts.LocalLinearTrend(observed_time_series=obs_series)
+      seasonal = tfp.sts.Seasonal(nseasons=7, observed_time_series=obs_series)
+      model = tfp.sts.Sum([local_linear, seasonal], observed_time_series=obs_series)
+
+      ci = CausalImpact(data, pre_period, post_period, model=model)
+      print(ci.summary())
+      ```
     """
     def __init__(
         self,
@@ -198,7 +217,25 @@ class CausalImpact():
         self._process_posterior_inferences()
         self._summarize_inferences()
 
-    def plot(self, panels=['original', 'pointwise', 'cumulative'], figsize=(15, 12)):
+    def plot(
+        self,
+        panels: List[str] = ['original', 'pointwise', 'cumulative'],
+        figsize: Tuple[int] = (10, 7)
+    ) -> None:
+        """
+        Plots the graphic with results associated to Causal Impact.
+
+        Args
+        ----
+          panels: List[str]
+              Which graphics to plot. 'original' plots the original data, forecasts means
+              and confidence intervals related to the fitted model.
+              'pointwise' plots the point wise differences between observed data and
+              predictions. Finally, 'cumulative' is a cumulative summation over real
+              data and its forecasts.
+          figsize: Tuple[int]
+              Sets the width and height of the figure to plot.
+        """
         plotter.plot(self.inferences, self.pre_data, self.post_data, panels=panels,
                      figsize=figsize)
 
@@ -255,7 +292,7 @@ class CausalImpact():
         self.model_samples = model_samples
         self.model_kernel_results = model_kernel_results
 
-    def _summarize_inferences(self):
+    def _summarize_inferences(self) -> None:
         """
         After processing predictions and forecasts, use these values to build the
         summary data used for reporting and plotting. Computes the estimated p-value
@@ -274,7 +311,7 @@ class CausalImpact():
                                                                     self.alpha)
         self.p_value = inferrer.compute_p_value(simulated_ys, post_data_sum)
 
-    def _process_posterior_inferences(self):
+    def _process_posterior_inferences(self) -> None:
         """
         Run `inferrer` to process data forecasts and predictions. Results feeds the
         summary table as well as the plotting functionalities.

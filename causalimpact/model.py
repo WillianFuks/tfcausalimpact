@@ -273,7 +273,7 @@ def build_default_model(
     sd_prior = _build_bijector(sd_prior)
     # This is an approximation to simulate the bsts package from R. It's expected that
     # given a few data points the posterior will converge appropriately given this
-    # distribution, that's why it's divided by 2
+    # distribution, that's why it's divided by 2.
     obs_prior = _build_inv_gamma_sd_prior(obs_sd / 2)
     obs_prior = _build_bijector(obs_prior)
     level_component = tfp.sts.LocalLevel(
@@ -282,12 +282,12 @@ def build_default_model(
     )
     components.append(level_component)
     # If it has more than 1 column then it has covariates X so add a linear regressor
-    # component
+    # component.
     if len(pre_data.columns) > 1:
         # We need to concatenate both pre and post data as this will allow the linear
         # regressor component to use the post data when running forecasts. As first
         # column is supposed to have response variable `y` then we filter out just the
-        # remaining columns for the `X` value
+        # remaining columns for the `X` value.
         complete_data = pd.concat([pre_data, post_data]).astype(np.float32)
         linear_component = tfp.sts.LinearRegression(
             design_matrix=complete_data.iloc[:, 1:]
@@ -301,7 +301,7 @@ def build_default_model(
         )
         components.append(seasonal_component)
     # Model must be built with `tfp.sts.Sum` so to add the observed noise `epsilon`
-    # parameter
+    # parameter.
     model = tfp.sts.Sum(components, observed_time_series=observed_time_series,
                         observation_noise_scale_prior=obs_prior)
     return model
@@ -365,7 +365,7 @@ def fit_model(
                 num_steps=variational_steps
             )
             # Don't sample too much as varitional inference method is built aiming for
-            # performance first
+            # performance first.
             samples = variational_posteriors.sample(100)
             return samples, None
         return _run_vi()
@@ -491,7 +491,7 @@ class SquareRootBijector(tfb.Bijector):
         """
         return tf.square(y)
 
-    def _inverse_log_det_jacobian(self, y: tf.Tensor):
+    def _inverse_log_det_jacobian(self, y: tf.Tensor) -> tf.Tensor:
         """
         When transforming from `P(X)` to `P(Y)` it's necessary to compute the log of the
         determinant of the Jacobian matrix for each correspondent function `G` which
@@ -511,7 +511,7 @@ class SquareRootBijector(tfb.Bijector):
         """
         return tf.math.log(2 * y)
 
-    def _forward_log_det_jacobian(self, x: tf.Tensor):
+    def _forward_log_det_jacobian(self, x: tf.Tensor) -> tf.Tensor:
         """
         Computes the volumetric change when moving forward from `P(X)` to `P(Y)`, given
         by:
