@@ -27,10 +27,3 @@ install:
 
 script:
     tox -e $TOX_ENV
-
-    #after_success:
-    #  - |
-    #    if [[ "$TOX_ENV" == "travis-coveralls" ]] ; then
-    #    echo 'testing coveralls'
-    #    coveralls
-    #    fi

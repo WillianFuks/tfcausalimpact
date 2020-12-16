@@ -154,7 +154,9 @@ def _check_empty_inputs(inputs: Dict[str, Any]) -> None:
       inputs: Dict[str, Any]
           Basically contains the `locals()` variables as received by CausalImpact.
     """
-    none_args = [arg for arg in inputs if inputs[arg] is None and arg != 'model']
+    none_args = sorted(
+        [arg for arg in inputs if inputs[arg] is None and arg != 'model']
+    )
     if none_args:
         raise ValueError(
             f'{", ".join(none_args)} '
