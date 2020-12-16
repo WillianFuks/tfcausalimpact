@@ -157,6 +157,7 @@ def test_default_causal_cto_with_np_array(rand_data, pre_int_period, post_int_pe
     assert ci.model_samples is not None
 
 
+@pytest.mark.slow
 def test_causal_cto_with_no_standardization(rand_data, pre_int_period, post_int_period):
     ci = CausalImpact(rand_data, pre_int_period, post_int_period, model_args=dict(
         standardize=False, fit_method='vi'))
@@ -166,6 +167,7 @@ def test_causal_cto_with_no_standardization(rand_data, pre_int_period, post_int_
     assert ci.p_value > 0 and ci.p_value < 1
 
 
+@pytest.mark.slow
 def test_causal_cto_with_seasons(date_rand_data, pre_str_period, post_str_period):
     ci = CausalImpact(date_rand_data, pre_str_period, post_str_period,
                       model_args={'nseasons': 7, 'season_duration': 2,
@@ -176,6 +178,7 @@ def test_causal_cto_with_seasons(date_rand_data, pre_str_period, post_str_period
     assert seasonal_component.num_steps_per_season == 2
 
 
+@pytest.mark.slow
 def test_causal_cto_with_custom_model_and_seasons(rand_data, pre_int_period,
                                                   post_int_period):
     pre_data = rand_data.loc[pre_int_period[0]: pre_int_period[1], :]
@@ -197,6 +200,7 @@ def test_causal_cto_with_custom_model_and_seasons(rand_data, pre_int_period,
     assert ci.inferences.index.dtype == rand_data.index.dtype
 
 
+@pytest.mark.slow
 def test_default_causal_cto_vi_method(rand_data, pre_int_period, post_int_period):
     ci = CausalImpact(rand_data, pre_int_period, post_int_period, model_args=dict(
         fit_method='vi'))
