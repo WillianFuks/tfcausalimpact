@@ -17,7 +17,7 @@
 Main class definition for running Causal Impact analysis.
 """
 
-from typing import Any, Dict, List, Optional, Union, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
