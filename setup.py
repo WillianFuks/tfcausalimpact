@@ -25,20 +25,24 @@ if sys.argv[-1] == 'test-publish':
     """
     Publishes to test pypi repository.
     """
+    if os.path.exists('dist') or os.path.exists('build'):
+        raise RuntimeError('Please first delete dist/build folders')
     os.system('pip install -U twine')
     os.system('sh ./scripts/build_wheels.sh')
     os.system('twine upload --repository testpypi dist/*')
-    os.system('rm -rf build dist .egg *.egg-info')
+    # os.system('rm -rf build dist .egg *.egg-info')
     sys.exit()
 
 if sys.argv[-1] == 'publish':
     """
     Publishes to original pypi repository.
     """
+    if os.path.exists('dist') or os.path.exists('build'):
+        raise RuntimeError('Please first delete dist/build folders')
     os.system('pip install -U twine')
     os.system('sh ./scripts/build_wheels.sh')
     os.system('twine upload dist/*')
-    os.system('rm -rf build dist .egg *.egg-info')
+    # os.system('rm -rf build dist .egg *.egg-info')
     sys.exit()
 
 install_requires = [
