@@ -297,7 +297,7 @@ def test_process_input_data(rand_data, pre_int_period, post_int_period, date_ran
             'niter': 1000,
             'nseasons': 1,
             'season_duration': 1,
-            'fit_method': 'hmc'
+            'fit_method': 'vi'
         }
         assert results['alpha'] == 0.05
         # tests user input model setting

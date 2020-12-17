@@ -14,7 +14,6 @@
 
 
 import os
-import re
 import sys
 
 from setuptools import setup
@@ -22,9 +21,28 @@ from setuptools import setup
 
 here = os.path.abspath(os.path.dirname(__file__))
 
+if sys.argv[-1] == 'test-publish':
+    """
+    Publishes to test pypi repository.
+    """
+    if os.path.exists('dist') or os.path.exists('build'):
+        raise RuntimeError('Please first delete dist/build folders')
+    os.system('pip install -U twine')
+    os.system('sh ./scripts/build_wheels.sh')
+    os.system('twine upload --repository testpypi dist/*')
+    # os.system('rm -rf build dist .egg *.egg-info')
+    sys.exit()
+
 if sys.argv[-1] == 'publish':
-    os.system('python setup.py sdist bdist_wheel')
+    """
+    Publishes to original pypi repository.
+    """
+    if os.path.exists('dist') or os.path.exists('build'):
+        raise RuntimeError('Please first delete dist/build folders')
+    os.system('pip install -U twine')
+    os.system('sh ./scripts/build_wheels.sh')
     os.system('twine upload dist/*')
+    # os.system('rm -rf build dist .egg *.egg-info')
     sys.exit()
 
 install_requires = [
@@ -80,7 +98,6 @@ setup(
     setup_requires=setup_requires,
     extras_require=extras_require,
     license='Apache License 2.0',
-    platforms='any',
     keywords='causal impact',
     classifiers=[
         'Development Status :: 3 - Alpha',
@@ -97,5 +114,9 @@ setup(
         'Programming Language :: Python :: Implementation :: CPython',
         'Topic :: Scientific/Engineering',
     ],
+    project_urls={
+        'Source': 'https://github.com/WillianFuks/tfcausalimpact'
+    },
+    python_requires='>=3, !=3.9.*',
     test_suite='tests'
 )

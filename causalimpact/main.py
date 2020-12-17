@@ -89,6 +89,9 @@ class CausalImpact():
                 observed response then this value can be low (such as the default of
                 0.01). In cases when the linear regression is not quite expected to fully
                 explain the observed data, the value 0.1 can be used.
+            fit_method: str
+                Which method to use for the Bayesian algorithm. Can be either 'vi'
+                (default) or 'hmc' (more precision but much slower).
             nseasons: int
               Specifies the duration of the period of the seasonal component; if input
               data is specified in terms of days, then choosing nseasons=7 adds a weekly
