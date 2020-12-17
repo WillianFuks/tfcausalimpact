@@ -167,7 +167,7 @@ If, on the other hand, precision is the top requirement when running causal impa
 ci = CausalImpact(data, pre_period, post_period, model_args={'fit_method': 'hmc'})
 ```
 
-This will make usage of the algorithm [`Hamiltonian Monte Carlo`](https://en.wikipedia.org/wiki/Hamiltonian_Monte_Carlo) which is State-of-the-Art for finding the Bayesian posterior of distributions. Still, keep in mind that on complex time series with thousands of data points and complex modeling involving various seasonal components this optimization can take 1 hour or even more to complete (on a GPU). Performance is sacrificed in exchange of better precision.
+This will make usage of the algorithm [`Hamiltonian Monte Carlo`](https://en.wikipedia.org/wiki/Hamiltonian_Monte_Carlo) which is State-of-the-Art for finding the Bayesian posterior of distributions. Still, keep in mind that on complex time series with thousands of data points and complex modeling involving various seasonal components this optimization can take 1 hour or even more to complete (on a GPU). Performance is sacrificed in exchange for better precision.
 
 ## Bugs & Issues
 
