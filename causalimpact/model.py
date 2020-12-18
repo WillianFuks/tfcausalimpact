@@ -188,6 +188,49 @@ def check_input_model(
         _check_component(model)
 
 
+def build_inv_gamma_sd_prior(sigma_guess: float) -> tfd.Distribution:
+    """
+    helper function to build the sd_prior distribution for standard deviation
+    modeling.
+
+    Args
+    ----
+      sigma_guess: float
+          Initial guess of where the standard deviation of the parameter is located.
+
+    Returns
+    -------
+      tfd.Distribution
+          InverseGamma distribution modeling the standard deviation.
+    """
+    sample_size = kLocalLevelPriorSampleSize
+    df = sample_size
+    a = np.float32(df / 2)
+    ss = sample_size * sigma_guess ** 2
+    b = np.float32(ss / 2)
+    return tfd.InverseGamma(a, b)
+
+
+def build_bijector(dist: tfd.Distribution) -> tfd.Distribution:
+    """
+    helper function for building final bijector given sd_prior. The bijector is
+    implemented through the `tfd.TransformedDistribution` class.
+
+    Args
+    ----
+      dist: tfd.Distribution
+          Distribution to receive the transformation `G(X)`.
+
+    Returns
+    -------
+      new_dist: tfd.Distribution
+          New distribution given by `y = G(X)`.
+    """
+    bijector = SquareRootBijector()
+    new_dist = tfd.TransformedDistribution(dist, bijector)
+    return new_dist
+
+
 def build_default_model(
     pre_data: pd.DataFrame,
     post_data: pd.DataFrame,
@@ -223,59 +266,16 @@ def build_default_model(
           `tfp.sts.LinearRegression` and `tfp.sts.Seasonal` components representing
           covariates and seasonal patterns.
     """
-    def _build_inv_gamma_sd_prior(
-        sigma_guess: float = prior_level_sd
-    ) -> tfd.Distribution:
-        """
-        helper function to build the sd_prior distribution for standard deviation
-        modeling.
-
-        Args
-        ----
-          sigma_guess: float
-              Initial guess of where the standard deviation of the parameter is located.
-
-        Returns
-        -------
-          tfd.Distribution
-              InverseGamma distribution modeling the standard deviation.
-        """
-        sample_size = kLocalLevelPriorSampleSize
-        df = sample_size
-        a = np.float32(df / 2)
-        ss = sample_size * sigma_guess ** 2
-        b = np.float32(ss / 2)
-        return tfd.InverseGamma(a, b)
-
-    def _build_bijector(dist: tfd.Distribution) -> tfd.Distribution:
-        """
-        helper function for building final bijector given sd_prior. The bijector is
-        implemented through the `tfd.TransformedDistribution` class.
-
-        Args
-        ----
-          dist: tfd.Distribution
-              Distribution to receive the transformation `G(X)`.
-
-        Returns
-        -------
-          new_dist: tfd.Distribution
-              New distribution given by `y = G(X)`.
-        """
-        bijector = SquareRootBijector()
-        new_dist = tfd.TransformedDistribution(dist, bijector)
-        return new_dist
-
     components = []
     observed_time_series = pre_data.iloc[:, 0].astype(np.float32)
     obs_sd = observed_time_series.std()
-    sd_prior = _build_inv_gamma_sd_prior()
-    sd_prior = _build_bijector(sd_prior)
+    sd_prior = build_inv_gamma_sd_prior(prior_level_sd)
+    sd_prior = build_bijector(sd_prior)
     # This is an approximation to simulate the bsts package from R. It's expected that
     # given a few data points the posterior will converge appropriately given this
     # distribution, that's why it's divided by 2.
-    obs_prior = _build_inv_gamma_sd_prior(obs_sd / 2)
-    obs_prior = _build_bijector(obs_prior)
+    obs_prior = build_inv_gamma_sd_prior(obs_sd / 2)
+    obs_prior = build_bijector(obs_prior)
     level_component = tfp.sts.LocalLevel(
         level_scale_prior=sd_prior,
         observed_time_series=observed_time_series
