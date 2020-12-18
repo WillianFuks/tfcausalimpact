@@ -171,4 +171,4 @@ This will make usage of the algorithm [`Hamiltonian Monte Carlo`](https://en.wik
 
 ## Bugs & Issues
 
-If you find bugs or have any issues while running this library please consider opening an `Issue` with a complete description and reproductible environment so we can better help you solving the problem.
+If you find bugs or have any issues while running this library please consider opening an [`Issue`](https://github.com/WillianFuks/tfcausalimpact/issues) with a complete description and reproductible environment so we can better help you solving the problem.
