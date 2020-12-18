@@ -8,7 +8,7 @@ Running the model is quite straightforward, it requires the observed data `y`, c
 
 It's important to keep in mind the main assumptions that this model makes in order ot run successfully:
  - First and foremost, it's crucial that the covariates `X` are not affected by the variable being manipulated as otherwise it'll lead to wrong conclusions. In the example of the marketing campaign, the covariates can be anything that might indicate a linear relationship with *Sales* and that won't be affect by the very same campaign.
- - The structural time series model used to fit observed data should be a good predictor for post-intervention period. Testing this assumption is also a good practice (this can be accomplished through back-testing. Please refer to this medium post for more on this subject).
+ - The structural time series model used to fit observed data should be a good predictor for post-intervention period. Testing this assumption is also a good practice (this can be accomplished through back-testing. Please refer to this medium [post](https://towardsdatascience.com/implementing-causal-impact-on-top-of-tensorflow-probability-c837ea18b126) for more on this subject).
 
 ## Installation
 
@@ -30,7 +30,7 @@ We recommend this [presentation](https://www.youtube.com/watch?v=GTgZfCltMm8) by
 
 We also created this introductory [ipython notebook](https://github.com/WillianFuks/tfcausalimpact/blob/master/notebooks/getting_started.ipynb) with examples of how to use this package.
 
-This medium article also offers some ideas and concepts behind the library.
+This medium [article](https://towardsdatascience.com/implementing-causal-impact-on-top-of-tensorflow-probability-c837ea18b126) also offers some ideas and concepts behind the library.
 
 ### Example
 
