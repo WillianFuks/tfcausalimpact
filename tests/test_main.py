@@ -278,3 +278,20 @@ def test_default_causal_cto_vi_method(rand_data, pre_int_period, post_int_period
     assert ci.model_args['niter'] == 1000
     assert ci.model_samples is not None
     assert ci.model_kernel_results is None
+
+
+def test_default_model_arma_data():
+    data = pd.read_csv('tests/fixtures/arma_data.csv')
+    data.iloc[70:, 0] += 5
+
+    pre_period = [0, 69]
+    post_period = [70, 99]
+
+    ci = CausalImpact(data, pre_period, post_period)
+    assert int(ci.summary_data['average']['actual']) == 105
+    assert int(ci.summary_data['average']['predicted']) == 100
+    assert int(ci.summary_data['average']['predicted_lower']) == 99
+    assert int(ci.summary_data['average']['predicted_upper']) == 100
+    assert int(ci.summary_data['average']['abs_effect']) == 5
+    assert int(ci.summary_data['average']['abs_effect_lower']) == 4
+    assert int(ci.summary_data['average']['abs_effect_upper']) == 5
