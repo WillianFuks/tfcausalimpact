@@ -41,7 +41,7 @@ import pandas as pd
 from causalimpact import CausalImpact
 
 
-data = pd.read_csv('tests/fixtures/arma_data.csv')
+data = pd.read_csv('https://raw.githubusercontent.com/WillianFuks/tfcausalimpact/master/tests/fixtures/arma_data.csv')
 data.iloc[70:, 0] += 5
 
 pre_period = [0, 69]
