@@ -14,3 +14,4 @@
 
 
 from causalimpact.main import CausalImpact
+from causalimpact.__version__ import __version__
