@@ -13,5 +13,5 @@
 # limitations under the License.
 
 
-from causalimpact.main import CausalImpact
 from causalimpact.__version__ import __version__
+from causalimpact.main import CausalImpact
