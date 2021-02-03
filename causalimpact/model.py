@@ -240,13 +240,18 @@ def build_default_model(
 ) -> tfp.sts.StructuralTimeSeries:
     """
     When input model is `None` then proceeds to build a default `tfp.sts.LocalLevel`
-    model. If input data has covariates then also adds a `tfp.sts.LinearRegression`
+    model. If input data has covariates then also adds a `tfp.sts.SparseLinearRegression`
     component.
 
     The level_prior follows `1 / prior_level_sd ** 2 ~ Gamma(a, b)` according to
     the original [BOOM](https://github.com/steve-the-bayesian/BOOM/blob/63f08a708153c8405b809405fa1ab5ed7193d648/Interfaces/python/R/R/bayes.py#L4:L12) package.  # noqa: E501
     This is achieved by using the InverseGamma(a, b) and a [bijector](https://tiao.io/post/building-probability-distributions-with-tensorflow-probability-bijector-api/) # noqa: E501
     transformation for the square root operator.
+
+    As for the linear regressor, the `tfp.sts.SparseLinearRegression` operation is similar
+    to the spike-and-slab from the original R package; main difference is that it follows
+    instead a horseshoe distribution which tends to penalize less the meaningful weights
+    in the shrinking process.[https://github.com/tensorflow/probability/blob/v0.12.1/tensorflow_probability/python/sts/regression.py#L265-L523] # noaq: E501
 
     Args
     ----
@@ -263,7 +268,7 @@ def build_default_model(
     -------
       model: tfp.sts.Sum
           A `tfp.sts.LocalLevel` default model with possible another
-          `tfp.sts.LinearRegression` and `tfp.sts.Seasonal` components representing
+          `tfp.sts.SparseLinearRegression` and `tfp.sts.Seasonal` components representing
           covariates and seasonal patterns.
     """
     components = []
@@ -289,7 +294,7 @@ def build_default_model(
         # column is supposed to have response variable `y` then we filter out just the
         # remaining columns for the `X` value.
         complete_data = pd.concat([pre_data, post_data]).astype(np.float32)
-        linear_component = tfp.sts.LinearRegression(
+        linear_component = tfp.sts.SparseLinearRegression(
             design_matrix=complete_data.iloc[:, 1:]
         )
         components.append(linear_component)
@@ -463,8 +468,7 @@ class SquareRootBijector(tfb.Bijector):
                 forward_min_event_ndims=0,
                 validate_args=validate_args,
                 parameters=parameters,
-                name=name
-            )
+                name=name)
 
     def _forward(self, x: Union[float, np.array, tf.Tensor]) -> tf.Tensor:
         """
