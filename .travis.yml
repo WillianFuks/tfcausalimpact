@@ -23,8 +23,8 @@ jobs:
       env: TOX_ENV=travis-coveralls
 
 install:
-  # from pip==20 it keeps installing wrong versions of Numpy
-  - pip install -U setuptools tox pip==19.3
+  - pip install -U pip
+  - pip install -U setuptools tox
 
 script:
     tox -e $TOX_ENV
