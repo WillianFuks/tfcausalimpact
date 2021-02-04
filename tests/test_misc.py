@@ -54,4 +54,4 @@ def test_standardize_raises_single_input():
 
 def test_get_z_score():
     assert get_z_score(0.5) == 0.
-    assert round(get_z_score(0.9177), 2) == 1.39
+    assert round(float(get_z_score(0.9177)), 2) == 1.39

@@ -50,8 +50,6 @@ install_requires = [
     'pandas',
     'tensorflow',
     'tensorflow-probability',
-    'numpy',
-    'scipy',
     'matplotlib',
 ]
 tests_require = [

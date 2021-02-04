@@ -199,8 +199,8 @@ def test_build_default_model(rand_data, pre_int_period, post_int_period):
     assert isinstance(level_prior.bijector, cimodel.SquareRootBijector)
     assert isinstance(level_prior.distribution, tfd.InverseGamma)
     assert level_prior.dtype == tf.float32
-    level = model.components[1]
-    design_matrix = level.design_matrix.to_dense()
+    linear = model.components[1]
+    design_matrix = linear.design_matrix.to_dense()
     np.testing.assert_equal(pd.concat([pre_data, post_data]).iloc[:, 1:].values.astype(
                             np.float32),
                             design_matrix)
@@ -220,8 +220,8 @@ def test_build_default_model(rand_data, pre_int_period, post_int_period):
     assert isinstance(level_prior.bijector, cimodel.SquareRootBijector)
     assert isinstance(level_prior.distribution, tfd.InverseGamma)
     assert level_prior.dtype == tf.float32
-    level = model.components[1]
-    design_matrix = level.design_matrix.to_dense()
+    linear = model.components[1]
+    design_matrix = linear.design_matrix.to_dense()
     np.testing.assert_equal(pd.concat([pre_data, post_data]).iloc[:, 1:].values.astype(
                             np.float32),
                             design_matrix)

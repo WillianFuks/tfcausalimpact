@@ -23,6 +23,7 @@ import mock
 import numpy as np
 import pandas as pd
 import pytest
+import tensorflow as tf
 import tensorflow_probability as tfp
 from numpy.testing import assert_array_equal
 from pandas.util.testing import assert_frame_equal
@@ -295,3 +296,30 @@ def test_default_model_arma_data():
     assert int(ci.summary_data['average']['abs_effect']) == 5
     assert int(ci.summary_data['average']['abs_effect_lower']) == 4
     assert int(ci.summary_data['average']['abs_effect_upper']) == 5
+
+
+def test_default_model_sparse_linear_regression_arma_data():
+    data = pd.read_csv('tests/fixtures/arma_sparse_reg.csv')
+    data.iloc[70:, 0] += 5
+
+    pre_period = [0, 69]
+    post_period = [70, 99]
+
+    ci = CausalImpact(data, pre_period, post_period)
+    samples = ci.model_samples
+
+    # Weights are computed as per original TFP source code:
+    # https://github.com/tensorflow/probability/blob/v0.12.1/tensorflow_probability/python/sts/regression.py#L489-L494 # noqa: E501
+    global_scale = (
+        samples['SparseLinearRegression/_global_scale_noncentered'] *
+        tf.sqrt(samples['SparseLinearRegression/_global_scale_variance']) * 0.1
+    )
+    local_scales = (
+        samples['SparseLinearRegression/_local_scales_noncentered'] *
+        tf.sqrt(samples['SparseLinearRegression/_local_scale_variances'])
+    )
+    weights = (
+        samples['SparseLinearRegression/_weights_noncentered'] * local_scales *
+        global_scale[..., tf.newaxis]
+    )
+    assert tf.abs(tf.reduce_mean(weights, axis=0).numpy()[1]) < 0.05
