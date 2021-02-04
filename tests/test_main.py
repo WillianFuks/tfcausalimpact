@@ -23,8 +23,8 @@ import mock
 import numpy as np
 import pandas as pd
 import pytest
-import tensorflow_probability as tfp
 import tensorflow as tf
+import tensorflow_probability as tfp
 from numpy.testing import assert_array_equal
 from pandas.util.testing import assert_frame_equal
 

@@ -23,7 +23,7 @@ jobs:
       env: TOX_ENV=travis-coveralls
 
 install:
-  - pip install -U setuptools tox pip
+  - pip install -U setuptools tox pip==20.2
 
 script:
     tox -e $TOX_ENV
