@@ -19,7 +19,9 @@
 from typing import Optional, Tuple
 
 import pandas as pd
-import scipy.stats as stats
+import tensorflow_probability as tfp
+
+tfd = tfp.distributions
 
 
 def standardize(data: pd.DataFrame) -> Tuple[pd.DataFrame, Tuple[float, float]]:
@@ -107,7 +109,8 @@ def maybe_unstandardize(
 
 def get_z_score(p: float) -> float:
     """
-    Returns the correspondent z-score with probability area p.
+    Returns the correspondent z-score (quantile) with probability area `p` derived from
+    a standard normal distribution.
 
     Args
     ----
@@ -117,6 +120,7 @@ def get_z_score(p: float) -> float:
     Returns
     -------
       float
-          The z-score correspondent of p.
+          The z-score (quantile) correspondent of p.
     """
-    return stats.norm.ppf(p)
+    norm = tfd.Normal(0, 1)
+    return norm.quantile(p).numpy()
