@@ -13,5 +13,4 @@
 # limitations under the License.
 
 
-VERSION = (0, 0, 2)
-__version__ = '.'.join([str(e) for e in VERSION])
+__version__ = '0.0.2'

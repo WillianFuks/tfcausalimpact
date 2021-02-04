@@ -1,5 +1,5 @@
 docker run -v $(pwd):/tfcausalimpact quay.io/pypa/manylinux1_x86_64 sh -c '''
-yum install -y json-c-devel
+yum update
 cd /tfcausalimpact
 for PY in /opt/python/*/bin/; do
     if [[ ($PY != *"27"*) || ($PY != *"39"*)]]; then
