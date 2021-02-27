@@ -18,7 +18,7 @@ import pandas as pd
 import tensorflow as tf
 
 import causalimpact.inferences as inferrer
-from causalimpact.misc import get_z_score, maybe_unstandardize
+from causalimpact.misc import maybe_unstandardize
 
 
 def test_get_lower_upper_percentiles():
@@ -59,6 +59,15 @@ def test_compile_posterior_inferences():
     niter = 10
 
     class OneStepDist:
+        def sample(self, niter):
+            tmp = tf.convert_to_tensor(
+                np.tile(np.arange(start=3.1, stop=6.1, step=1), (niter, 1)) +
+                np.arange(niter).reshape(-1, 1),
+                dtype=np.float32
+            )
+            tmp = tmp[..., tf.newaxis]
+            return tmp
+
         def mean(self):
             return np.ones((len(pre_data), 1)) * one_step_mean
 
@@ -105,17 +114,26 @@ def test_compile_posterior_inferences():
         expec_complete_preds_means['complete_preds_means'],
         inferences['complete_preds_means']
     )
+    simulated_pre_ys = maybe_unstandardize(
+        np.squeeze(one_step_dist.sample(niter)),
+        mu_sig
+    )
+    simulated_post_ys = maybe_unstandardize(
+        np.squeeze(posterior_dist.sample(niter)),
+        mu_sig
+    )
+    lower_percen, upper_percen = inferrer.get_lower_upper_percentiles(alpha)
     # test complete_preds_lower
-    pre_preds_lower = (
-        np.array([1, 1, 1]) * one_step_mean -
-        get_z_score(1 - alpha / 2) * one_step_stddev
-    ) * sig + mu
-    pre_preds_lower[np.abs(pre_preds_lower) > np.quantile(pre_preds_lower, 0.5) +
-                    3 * np.std(pre_preds_lower)] = np.nan
-    post_preds_lower = (
-        np.array([1, 1, 1]) * posterior_mean -
-        get_z_score(1 - alpha / 2) * posterior_stddev
-    ) * sig + mu
+    pre_preds_lower, pre_preds_upper = np.percentile(
+        simulated_pre_ys,
+        [lower_percen, upper_percen],
+        axis=0
+    )
+    post_preds_lower, post_preds_upper = np.percentile(
+        simulated_post_ys,
+        [lower_percen, upper_percen],
+        axis=0
+    )
     expec_complete_preds_lower = np.concatenate([pre_preds_lower, post_preds_lower])
     expec_complete_preds_lower = pd.DataFrame(
         data=expec_complete_preds_lower,
@@ -128,16 +146,6 @@ def test_compile_posterior_inferences():
         inferences['complete_preds_lower']
     )
     # test complete_preds_upper
-    pre_preds_upper = (
-        np.array([1, 1, 1]) * one_step_mean +
-        get_z_score(1 - alpha / 2) * one_step_stddev
-    ) * sig + mu
-    pre_preds_upper[np.abs(pre_preds_upper) > np.quantile(pre_preds_upper, 0.5) +
-                    3 * np.std(pre_preds_upper)] = np.nan
-    post_preds_upper = (
-        np.array([1, 1, 1]) * posterior_mean +
-        get_z_score(1 - alpha / 2) * posterior_stddev
-    ) * sig + mu
     expec_complete_preds_upper = np.concatenate([pre_preds_upper, post_preds_upper])
     expec_complete_preds_upper = pd.DataFrame(
         data=expec_complete_preds_upper,
@@ -149,7 +157,7 @@ def test_compile_posterior_inferences():
         expec_complete_preds_upper['complete_preds_upper'],
         inferences['complete_preds_upper']
     )
-    # test post_preds_means
+    # test pre and post_preds_means
     expec_post_preds_means = pd.DataFrame(
         data=np.array([np.nan] * 3 + [posterior_mean * sig + mu] * len(pre_data)),
         index=expected_index,
@@ -161,12 +169,8 @@ def test_compile_posterior_inferences():
         inferences['post_preds_means']
     )
     # test post_preds_lower
-    post_preds_lower = (
-        np.array([np.nan] * 3 + [1, 1, 1]) * posterior_mean -
-        get_z_score(1 - alpha / 2) * posterior_stddev
-    ) * sig + mu
     expec_post_preds_lower = pd.DataFrame(
-        data=post_preds_lower,
+        data=np.concatenate([[np.nan] * len(pre_data), post_preds_lower]),
         index=expected_index,
         dtype=np.float64,
         columns=['post_preds_lower']
@@ -176,12 +180,8 @@ def test_compile_posterior_inferences():
         inferences['post_preds_lower']
     )
     # test post_preds_upper
-    post_preds_upper = (
-        np.array([np.nan] * 3 + [1, 1, 1]) * posterior_mean +
-        get_z_score(1 - alpha / 2) * posterior_stddev
-    ) * sig + mu
     expec_post_preds_upper = pd.DataFrame(
-        data=post_preds_upper,
+        data=np.concatenate([[np.nan] * len(pre_data), post_preds_upper]),
         index=expected_index,
         dtype=np.float64,
         columns=['post_preds_upper']
@@ -216,8 +216,7 @@ def test_compile_posterior_inferences():
     )
     # test post_cum_preds_lower
     post_cum_preds_lower, post_cum_preds_upper = np.percentile(
-        np.cumsum(maybe_unstandardize(np.squeeze(posterior_dist.sample(niter)), mu_sig),
-                  axis=1),
+        np.cumsum(simulated_post_ys, axis=1),
         [100 * alpha / 2, 100 - 100 * alpha / 2],
         axis=0
     )
@@ -303,9 +302,7 @@ def test_compile_posterior_inferences():
     )
     # test post_cum_effects_lower
     post_cum_effects_lower, post_cum_effects_upper = np.percentile(
-        np.cumsum(post_data.iloc[:, 0].values - maybe_unstandardize(np.squeeze(
-            posterior_dist.sample(niter)), mu_sig),
-                  axis=1),
+        np.cumsum(post_data.iloc[:, 0].values - simulated_post_ys, axis=1),
         [100 * alpha / 2, 100 - 100 * alpha / 2],
         axis=0
     )

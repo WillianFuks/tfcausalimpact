@@ -52,7 +52,7 @@ def summary(
       p_value: float
           p-value test for testing presence of signal in data.
       alpha: float
-          Sets confidence interval width.
+          Sets credible interval width.
       output: str
           Can be either "summary" or "report". The first is a simpler output just
           informing general metrics such as expected absolute or relative effect.

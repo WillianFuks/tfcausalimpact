@@ -17,7 +17,6 @@ Please refer to this medium [post](https://towardsdatascience.com/implementing-c
 ## Requirements
 
  - python{3.6, 3.7, 3.8}
- - numpy
  - matplotlib
  - jinja2
  - tensorflow>=2.3.0
@@ -41,7 +40,7 @@ import pandas as pd
 from causalimpact import CausalImpact
 
 
-data = pd.read_csv('https://raw.githubusercontent.com/WillianFuks/tfcausalimpact/master/tests/fixtures/arma_data.csv')
+data = pd.read_csv('https://raw.githubusercontent.com/WillianFuks/tfcausalimpact/master/tests/fixtures/arma_data.csv')[['y', 'X']]
 data.iloc[70:, 0] += 5
 
 pre_period = [0, 69]

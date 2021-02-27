@@ -232,7 +232,7 @@ class CausalImpact():
         ----
           panels: List[str]
               Which graphics to plot. 'original' plots the original data, forecasts means
-              and confidence intervals related to the fitted model.
+              and credible intervals related to the fitted model.
               'pointwise' plots the point wise differences between observed data and
               predictions. Finally, 'cumulative' is a cumulative summation over real
               data and its forecasts.

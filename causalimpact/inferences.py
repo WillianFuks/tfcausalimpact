@@ -26,7 +26,7 @@ import pandas as pd
 import tensorflow as tf
 import tensorflow_probability as tfp
 
-from causalimpact.misc import get_z_score, maybe_unstandardize
+from causalimpact.misc import maybe_unstandardize
 
 tfd = tfp.distributions
 
@@ -38,8 +38,8 @@ def get_lower_upper_percentiles(alpha: float) -> List[float]:
     Args
     ----
       alpha: float
-         Sets the size of the confidence interval. If `alpha=0.05` then extracts the
-         95% confidence interval for forecasts.
+         Sets the size of the credible interval. If `alpha=0.05` then extracts the
+         95% credible interval for forecasts.
 
     Returns
     -------
@@ -78,7 +78,7 @@ def compile_posterior_inferences(
           First value is the mean used for standardization and second value is the
           standard deviation.
       alpha: float
-          Sets confidence interval size.
+          Sets credible interval size.
       niter: int
           Total mcmc samples to sample from the posterior structural model.
 
@@ -88,78 +88,52 @@ def compile_posterior_inferences(
           Final dataframe with all data related to one-step predictions and forecasts.
     """
     lower_percen, upper_percen = get_lower_upper_percentiles(alpha)
-    z_score = get_z_score(1 - alpha / 2)
     # Integrates pre and post index for cumulative index data.
     cum_index = build_cum_index(pre_data.index, post_data.index)
     # We create a pd.Series with a single 0 (zero) value to work as the initial value
     # when computing the cumulative inferences. Without this value the plotting of
     # cumulative data breaks at the initial point.
     zero_series = pd.Series([0])
-    simulated_ys = posterior_dist.sample(niter)  # shape (niter, n_forecasts, 1)
-    simulated_ys = maybe_unstandardize(
-        np.squeeze(simulated_ys.numpy()),
+    simulated_pre_ys = one_step_dist.sample(niter)  # shape (niter, n_train_timestamps, 1)
+    simulated_pre_ys = maybe_unstandardize(
+        np.squeeze(simulated_pre_ys.numpy()),
+        mu_sig
+    )  # shape (niter, n_forecasts)
+    simulated_post_ys = posterior_dist.sample(niter)  # shape (niter, n_forecasts, 1)
+    simulated_post_ys = maybe_unstandardize(
+        np.squeeze(simulated_post_ys.numpy()),
         mu_sig
     )  # shape (niter, n_forecasts)
     # Pre inference
     pre_preds_means = one_step_dist.mean()
-    pre_preds_stds = one_step_dist.stddev()
-    # First points in predictions of pre-data can be quite noisy due the lack of observed
-    # data coming before these points. We try to remove those by applying a filter that
-    # removes all points that falls above 3 standard deviations from the 50% quantile of
-    # the array of standard deviations for predictions, replacing those with `np.nan`.
-    pre_preds_stds = tf.where(
-        tf.math.greater(
-            tf.abs(pre_preds_stds),
-            np.quantile(pre_preds_stds, 0.5) + 3 * tf.math.reduce_std(pre_preds_stds)
-        ),
-        np.nan,
-        pre_preds_stds
-    )
-    pre_preds_lower = pd.Series(
-        np.squeeze(
-            maybe_unstandardize(pre_preds_means - z_score * pre_preds_stds, mu_sig)
-        ),
-        index=pre_data.index
-    )
-    pre_preds_upper = pd.Series(
-        np.squeeze(
-            maybe_unstandardize(pre_preds_means + z_score * pre_preds_stds, mu_sig)
-        ),
-        index=pre_data.index
-    )
     pre_preds_means = pd.Series(
         np.squeeze(
             maybe_unstandardize(pre_preds_means, mu_sig)
         ),
         index=pre_data.index
     )
+    pre_preds_lower, pre_preds_upper = np.percentile(
+        simulated_pre_ys,
+        [lower_percen, upper_percen],
+        axis=0
+    )
+    pre_preds_lower = pd.Series(pre_preds_lower, index=pre_data.index)
+    pre_preds_upper = pd.Series(pre_preds_upper, index=pre_data.index)
     # Post inference
     post_preds_means = posterior_dist.mean()
-    post_preds_stds = posterior_dist.stddev()
-    post_preds_lower = pd.Series(
-        np.squeeze(
-            maybe_unstandardize(
-                post_preds_means - z_score * post_preds_stds,
-                mu_sig
-            )
-        ),
-        index=post_data.index
-    )
-    post_preds_upper = pd.Series(
-        np.squeeze(
-            maybe_unstandardize(
-                post_preds_means + z_score * post_preds_stds,
-                mu_sig
-            )
-        ),
-        index=post_data.index
-    )
     post_preds_means = pd.Series(
         np.squeeze(
             maybe_unstandardize(post_preds_means, mu_sig)
         ),
         index=post_data.index
     )
+    post_preds_lower, post_preds_upper = np.percentile(
+        simulated_post_ys,
+        [lower_percen, upper_percen],
+        axis=0
+    )
+    post_preds_lower = pd.Series(post_preds_lower, index=post_data.index)
+    post_preds_upper = pd.Series(post_preds_upper, index=post_data.index)
     # Concatenations
     complete_preds_means = pd.concat([pre_preds_means, post_preds_means])
     complete_preds_lower = pd.concat([pre_preds_lower, post_preds_lower])
@@ -172,7 +146,7 @@ def compile_posterior_inferences(
     post_cum_preds_means = pd.concat([zero_series, post_cum_preds_means])
     post_cum_preds_means.index = cum_index
     post_cum_preds_lower, post_cum_preds_upper = np.percentile(
-        np.cumsum(simulated_ys, axis=1),
+        np.cumsum(simulated_post_ys, axis=1),
         [lower_percen, upper_percen],
         axis=0
     )
@@ -202,7 +176,7 @@ def compile_posterior_inferences(
     post_cum_effects_means = pd.concat([zero_series, post_cum_effects_means])
     post_cum_effects_means.index = cum_index
     post_cum_effects_lower, post_cum_effects_upper = np.percentile(
-        np.cumsum(post_data.iloc[:, 0].values - simulated_ys, axis=1),
+        np.cumsum(post_data.iloc[:, 0].values - simulated_post_ys, axis=1),
         [lower_percen, upper_percen],
         axis=0
     )
@@ -304,7 +278,7 @@ def summarize_posterior_inferences(
     """
     After running the posterior inferences compilation, this function aggregates the
     results and gets the final interpretation for the Causal Impact results, such as
-    the expected absolute impact of the given intervention and its confidence interval.
+    the expected absolute impact of the given intervention and its credible interval.
 
     Args
     ----
