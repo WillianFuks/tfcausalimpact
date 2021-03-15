@@ -26,7 +26,8 @@ def plot(
     pre_data: pd.DataFrame,
     post_data: pd.DataFrame,
     panels=['original', 'pointwise', 'cumulative'],
-    figsize=(10, 7)
+    figsize=(10, 7),
+    show=True
 ) -> None:
     """Plots inferences results related to causal impact analysis.
 
@@ -36,7 +37,8 @@ def plot(
         Indicates which plot should be considered in the graphics.
       figsize: tuple.
         Changes the size of the graphics plotted.
-
+      show: bool. 
+        If true, runs plt.show(), i.e., displays the figure. Defaults to True.
     Raises
     ------
       RuntimeError: if inferences were not computed yet.
@@ -132,7 +134,8 @@ def plot(
         ax.axhline(y=0, color='gray', linestyle='--')
         ax.legend()
         ax.grid(True, color='gainsboro')
-    plt.show()
+    if show:
+        plt.show()
 
 
 def get_plotter():  # pragma: no cover
