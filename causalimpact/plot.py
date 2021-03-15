@@ -37,7 +37,7 @@ def plot(
         Indicates which plot should be considered in the graphics.
       figsize: tuple.
         Changes the size of the graphics plotted.
-      show: bool. 
+      show: bool.
         If true, runs plt.show(), i.e., displays the figure. Defaults to True.
     Raises
     ------
