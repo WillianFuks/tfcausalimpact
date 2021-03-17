@@ -682,12 +682,13 @@ def test_plot_raises_wrong_input_panel(rand_data, pre_int_period, post_int_perio
         '"original", "pointwise", "cumulative".'
     )
 
+
 def test_plot_original_panel_gap_data_show(
     rand_data, pre_int_gap_period, post_int_gap_period, inferences, monkeypatch
 ):
     plot_mock = mock.Mock()
-    pre_data = rand_data.loc[pre_int_gap_period[0] : pre_int_gap_period[1]]
-    post_data = rand_data.loc[post_int_gap_period[0] : post_int_gap_period[1]]
+    pre_data = rand_data.loc[pre_int_gap_period[0]: pre_int_gap_period[1]]
+    post_data = rand_data.loc[post_int_gap_period[0]: post_int_gap_period[1]]
     pre_post_index = pre_data.index.union(post_data.index)
     monkeypatch.setattr("causalimpact.plot.get_plotter", plot_mock)
     plotter.plot(inferences, pre_data, post_data, panels=["original"], show=False)
