@@ -681,3 +681,42 @@ def test_plot_raises_wrong_input_panel(rand_data, pre_int_period, post_int_perio
         '"test" is not a valid panel. Valid panels are: '
         '"original", "pointwise", "cumulative".'
     )
+
+def test_plot_original_panel_gap_data_show(
+    rand_data, pre_int_gap_period, post_int_gap_period, inferences, monkeypatch
+):
+    plot_mock = mock.Mock()
+    pre_data = rand_data.loc[pre_int_gap_period[0] : pre_int_gap_period[1]]
+    post_data = rand_data.loc[post_int_gap_period[0] : post_int_gap_period[1]]
+    pre_post_index = pre_data.index.union(post_data.index)
+    monkeypatch.setattr("causalimpact.plot.get_plotter", plot_mock)
+    plotter.plot(inferences, pre_data, post_data, panels=["original"], show=False)
+
+    plot_mock.assert_called_once()
+    plot_mock.return_value.figure.assert_called_with(figsize=(10, 7))
+    plot_mock.return_value.subplot.assert_any_call(1, 1, 1)
+    ax_mock = plot_mock.return_value.subplot.return_value
+    ax_args = ax_mock.plot.call_args_list
+
+    assert_array_equal(pre_post_index, ax_args[0][0][0])
+    assert_array_equal(
+        pd.concat([pre_data.iloc[:, 0], post_data.iloc[:, 0]]), ax_args[0][0][1]
+    )
+    assert ax_args[0][0][2] == "k"
+    assert ax_args[0][1] == {"label": "y"}
+    assert_array_equal(pre_post_index[1:], ax_args[1][0][0])
+    assert_array_equal(inferences["complete_preds_means"].iloc[1:], ax_args[1][0][1])
+    assert ax_args[1][1] == {"color": "orangered", "ls": "dashed", "label": "Predicted"}
+
+    ax_mock.axvline.assert_called_with(pre_int_gap_period[1], c="gray", linestyle="--")
+
+    ax_args = ax_mock.fill_between.call_args_list[0]
+    assert_array_equal(ax_args[0][0], pre_post_index[1:])
+    assert_array_equal(ax_args[0][1], inferences["complete_preds_lower"].iloc[1:])
+    assert_array_equal(ax_args[0][2], inferences["complete_preds_upper"].iloc[1:])
+    assert ax_args[1] == {"color": (1.0, 0.4981, 0.0549), "alpha": 0.4}
+
+    ax_mock.grid.assert_called_with(True, color="gainsboro")
+    ax_mock.legend.assert_called()
+    # if show == False, then plt.show() should not have been called
+    plot_mock.return_value.show.assert_not_called()

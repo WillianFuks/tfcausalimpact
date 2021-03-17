@@ -38,7 +38,11 @@ def plot(
       figsize: tuple.
         Changes the size of the graphics plotted.
       show: bool.
-        If true, runs plt.show(), i.e., displays the figure. Defaults to True.
+        If true, runs plt.show(), i.e., displays the figure.
+        If false, it gives acess to the axis, i.e., the figure can be saved
+        and the style of the plot can be modified by getting the axis with
+        `ax = plt.gca()` or the figure with `fig = plt.gcf()`.
+        Defaults to True.
     Raises
     ------
       RuntimeError: if inferences were not computed yet.
