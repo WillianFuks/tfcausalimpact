@@ -199,7 +199,7 @@ def test_plotter(monkeypatch, rand_data, pre_int_period, post_int_period):
     ci.plot()
     plotter_mock.plot.assert_called_with('inferences', 'pre_data', 'post_data',
                                          panels=['original', 'pointwise', 'cumulative'],
-                                         figsize=(10, 7))
+                                         figsize=(10, 7), show=True)
 
 
 def test_summarizer(monkeypatch, rand_data, pre_int_period, post_int_period):
