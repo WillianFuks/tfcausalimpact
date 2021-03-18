@@ -223,7 +223,8 @@ class CausalImpact():
     def plot(
         self,
         panels: List[str] = ['original', 'pointwise', 'cumulative'],
-        figsize: Tuple[int] = (10, 7), show: bool = True
+        figsize: Tuple[int] = (10, 7),
+        show: bool = True
     ) -> None:
         """
         Plots the graphic with results associated to Causal Impact.
@@ -239,11 +240,12 @@ class CausalImpact():
           figsize: Tuple[int]
               Sets the width and height of the figure to plot.
           show: bool
-            If true, runs plt.show(), i.e., displays the figure.
-            If false, it gives acess to the axis, i.e., the figure can be saved
-            and the style of the plot can be modified by getting the axis with
-            `ax = plt.gca()` or the figure with `fig = plt.gcf()`.
-            Defaults to True.
+            If `True` then plots the figure by running `plt.plot()`.
+            If `False` then nothing will be plotted which allows for accessing and
+            manipulating the figure and axis of the plot, i.e., the figure can be saved
+            and the styling can be modified. To get the axis, just run:
+            `import matplotlib.pyplot as plt; ax = plt.gca()` or the figure:
+            `fig = plt.gcf()`. Defaults to `True`.
         """
         plotter.plot(self.inferences, self.pre_data, self.post_data, panels=panels,
                      figsize=figsize, show=show)

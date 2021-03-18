@@ -683,7 +683,7 @@ def test_plot_raises_wrong_input_panel(rand_data, pre_int_period, post_int_perio
     )
 
 
-def test_plot_original_panel_gap_data_show(
+def test_plot_original_panel_gap_data_show_is_false(
     rand_data, pre_int_gap_period, post_int_gap_period, inferences, monkeypatch
 ):
     plot_mock = mock.Mock()
@@ -719,5 +719,5 @@ def test_plot_original_panel_gap_data_show(
 
     ax_mock.grid.assert_called_with(True, color="gainsboro")
     ax_mock.legend.assert_called()
-    # if show == False, then plt.show() should not have been called
+    # If `show == False` then `plt.show()` should not have been called
     plot_mock.return_value.show.assert_not_called()
