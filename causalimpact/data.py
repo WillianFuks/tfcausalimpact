@@ -189,7 +189,7 @@ def standardize_pre_and_post_data(
     """
     normed_pre_data, (mu, sig) = standardize(pre_data)
     normed_post_data = (post_data - mu) / sig
-    mu_sig = (mu[0], sig[0])
+    mu_sig = (mu.iloc[0], sig.iloc[0])
     return (normed_pre_data, normed_post_data, mu_sig)
 
 

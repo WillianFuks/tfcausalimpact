@@ -39,6 +39,26 @@ def test_basic_standardize():
     )
 
 
+def test_standardize_with_integer_column_names():
+    # https://github.com/WillianFuks/tfcausalimpact/issues/17
+    data = {
+        'c1': [1, 4, 8, 9, 10],
+        0: [4, 8, 12, 16, 20]
+    }
+    data = pd.DataFrame(data)
+    result, (mu, sig) = standardize(data)
+
+    pd.util.testing.assert_almost_equal(
+        np.zeros(data.shape[1]),
+        result.mean().values
+    )
+
+    pd.util.testing.assert_almost_equal(
+        np.ones(data.shape[1]),
+        result.std(ddof=0).values
+    )
+
+
 def test_standardize_w_various_distinct_inputs():
     test_data = [[1, 2, 1], [1, np.nan, 3], [10, 20, 30]]
     test_data = [pd.DataFrame(data, dtype="float") for data in test_data]
