@@ -158,7 +158,7 @@ Both results are equivalent.
 
 ## Performance
 
-This package uses as default the [`Variational Inference`](https://en.wikipedia.org/wiki/Variational_Bayesian_methods) method from `TensorFlow Probability` which is faster and should work for the most part. Convergence can take somewhere between 2~3 minutes on more complex time series. Also, consider using a GPU to run even faster.
+This package uses as default the [`Variational Inference`](https://en.wikipedia.org/wiki/Variational_Bayesian_methods) method from `TensorFlow Probability` which is faster and should work for the most part. Convergence can take somewhere between 2~3 minutes on more complex time series. You could also try running the package on top of GPUs to see if results improve.
 
 If, on the other hand, precision is the top requirement when running causal impact analyzes, it's possible to switch algorithms by manipulating the input arguments like so:
 
