@@ -232,6 +232,7 @@ def build_bijector(dist: tfd.Distribution) -> tfd.Distribution:
 
 
 def build_default_model(
+    observed_time_series: pd.DataFrame,
     pre_data: pd.DataFrame,
     post_data: pd.DataFrame,
     prior_level_sd: float,
@@ -255,6 +256,7 @@ def build_default_model(
 
     Args
     ----
+      observed_time_series: pd.DataFrame
       pre_data: pd.DataFrame
       post_data: pd.DataFrame
       prior_level_sd: float
@@ -272,8 +274,7 @@ def build_default_model(
           covariates and seasonal patterns.
     """
     components = []
-    observed_time_series = pre_data.iloc[:, 0].astype(np.float32)
-    obs_sd = observed_time_series.std()
+    obs_sd = observed_time_series.values.std()  # use `values` to avoid batching dims
     sd_prior = build_inv_gamma_sd_prior(prior_level_sd)
     sd_prior = build_bijector(sd_prior)
     # This is an approximation to simulate the bsts package from R. It's expected that

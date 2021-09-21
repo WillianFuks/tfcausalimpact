@@ -20,6 +20,7 @@ import pytest
 import tensorflow_probability as tfp
 
 import causalimpact.data as cidata
+import causalimpact.misc as misc
 
 
 def test_format_input_data(rand_data):
@@ -300,6 +301,17 @@ def test_process_input_data(rand_data, pre_int_period, post_int_period, date_ran
             'fit_method': 'vi'
         }
         assert results['alpha'] == 0.05
+        expected_series = cur_data.loc[cur_pre_period[0]: cur_pre_period[1], :]
+        expected_series = expected_series.astype(np.float32)
+        expected_series = pd.DataFrame(expected_series.iloc[:, 0])
+        expected_series = misc.standardize(expected_series)[0]
+        if type_ == 'int':
+            expected_series.set_index(
+                pd.date_range(start='2020-01-01', periods=len(expected_series)),
+                inplace=True
+            )
+        expected_series = tfp.sts.regularize_series(expected_series)
+        pd.testing.assert_frame_equal(results['observed_time_series'], expected_series)
         # tests user input model setting
         model = tfp.sts.LocalLevel()
         results = cidata.process_input_data(cur_data, cur_pre_period, cur_post_period,
@@ -348,6 +360,8 @@ def test_process_input_data(rand_data, pre_int_period, post_int_period, date_ran
     standardize_pre_and_post_data_mock.return_value = ('normed_pre_data',
                                                        'normed_post_data',
                                                        'mu_sig')
+    build_observed_time_series_mock = mock.Mock()
+    build_observed_time_series_mock.return_value = 'observed_time_series'
 
     monkeypatch.setattr('causalimpact.data.format_input_data', format_input_data_mock)
     monkeypatch.setattr('causalimpact.data.process_pre_post_data',
@@ -361,6 +375,8 @@ def test_process_input_data(rand_data, pre_int_period, post_int_period, date_ran
                         build_default_model_mock)
     monkeypatch.setattr('causalimpact.data.standardize_pre_and_post_data',
                         standardize_pre_and_post_data_mock)
+    monkeypatch.setattr('causalimpact.data.build_observed_time_series',
+                        build_observed_time_series_mock)
 
     results = cidata.process_input_data('input_data', pre_int_period, post_int_period,
                                         'model', {}, 0.05)
@@ -372,6 +388,7 @@ def test_process_input_data(rand_data, pre_int_period, post_int_period, date_ran
     check_input_model_mock.assert_called_once_with('model', 'pre_data', 'post_data')
     standardize_pre_and_post_data_mock.assert_called_once_with('pre_data', 'post_data')
     build_default_model_mock.assert_not_called()
+    build_observed_time_series_mock.assert_called()
 
     assert results == {
         'data': 'processed_data',
@@ -381,6 +398,7 @@ def test_process_input_data(rand_data, pre_int_period, post_int_period, date_ran
         'post_data': 'post_data',
         'normed_pre_data': 'normed_pre_data',
         'normed_post_data': 'normed_post_data',
+        'observed_time_series': 'observed_time_series',
         'model': 'model',
         'model_args': {
             'standardize': True,
@@ -394,11 +412,9 @@ def test_process_input_data(rand_data, pre_int_period, post_int_period, date_ran
 
     results = cidata.process_input_data('input_data', pre_int_period, post_int_period,
                                         None, {}, 0.05)
-    build_default_model_mock.assert_called_once_with('normed_pre_data',
-                                                     'normed_post_data',
-                                                     0.01,
-                                                     1,
-                                                     1)
+    build_default_model_mock.assert_called_once_with('observed_time_series',
+                                                     'normed_pre_data',
+                                                     'normed_post_data', 0.01, 1, 1)
     assert results == {
         'data': 'processed_data',
         'pre_period': [0, 99],
@@ -407,6 +423,7 @@ def test_process_input_data(rand_data, pre_int_period, post_int_period, date_ran
         'post_data': 'post_data',
         'normed_pre_data': 'normed_pre_data',
         'normed_post_data': 'normed_post_data',
+        'observed_time_series': 'observed_time_series',
         'model': 'default model',
         'model_args': {
             'standardize': True,

@@ -101,6 +101,9 @@ def process_input_data(
         normed_pre_data: pd.DataFrame
             If `standardize==True` then this is the result of the input data being
             normalized.
+        observed_time_series: pd.DataFrame
+            The input time series used for the TFP API. Main change is the index now
+            is mandatory to be of type `DatetimeIndex` and have a valid frequency.
         normed_post_data: pd.DataFrame
         model: tfp.sts.StructuralTimeSeries
             `tfp.sts.StructuralTimeSeries` validated input model.
@@ -122,12 +125,17 @@ def process_input_data(
     model_args = cimodel.process_model_args(model_args if model_args else {})
     normed_data = (standardize_pre_and_post_data(pre_data, post_data) if
                    model_args['standardize'] else (None, None, None))
+    normed_pre_data, normed_post_data = normed_data[0], normed_data[1]
+    observed_time_series = build_observed_time_series(
+        pre_data if normed_pre_data is None else normed_pre_data
+    )
     if model:
         cimodel.check_input_model(model, pre_data, post_data)
     else:
         model = cimodel.build_default_model(
-            normed_data[0] if model_args['standardize'] else pre_data,
-            normed_data[1] if model_args['standardize'] else post_data,
+            observed_time_series,
+            normed_pre_data if model_args['standardize'] else pre_data,
+            normed_post_data if model_args['standardize'] else post_data,
             model_args['prior_level_sd'],
             model_args['nseasons'],
             model_args['season_duration']
@@ -140,11 +148,33 @@ def process_input_data(
         'post_data': post_data,
         'normed_pre_data': normed_data[0],
         'normed_post_data': normed_data[1],
+        'observed_time_series': observed_time_series,
         'model': model,
         'model_args':  model_args,
         'alpha': alpha,
         'mu_sig': normed_data[2]
     }
+
+
+def build_observed_time_series(pre_data: pd.DataFrame) -> pd.DataFrame:
+    """
+    Helper method for creating the observed time series data to be used as input for
+    the TFP API. If input data index is of type
+    `pandas.core.indexes.range.RangeIndex`
+    then it's casted to `DatetimeIndex` as required by `TFP==0.14.0`. A dummy date index
+    is created starting from '2020-01-01'.
+    """
+    # type must be cast to `np.float32` as the linear regressor from tensorflow only
+    # works with 32 bytes.
+    observed_time_series = pre_data.astype(np.float32)
+    # if operation `iloc` returns a pd.Series, cast it back to pd.DataFrame
+    observed_time_series = pd.DataFrame(observed_time_series.iloc[:, 0])
+    if isinstance(pre_data.index, pd.RangeIndex):
+        observed_time_series.set_index(
+            pd.date_range(start='2020-01-01', periods=len(observed_time_series)),
+            inplace=True
+        )
+    return tfp.sts.regularize_series(observed_time_series)
 
 
 def _check_empty_inputs(inputs: Dict[str, Any]) -> None:
@@ -319,7 +349,7 @@ def convert_index_to_datetime(data: pd.DataFrame) -> pd.DataFrame:
     """
     If input data has index of string dates, i.e, '20200101', '20200102' and so on, try
     to convert it to datetime specifically, which results in
-    Timestamp('2020-01-01 00:00:00'), Timestamp('2020-01-02 00:00:00')
+    Timestamp('2020-01-01 00:00:00'), Timestamp('2020-01-02 00:00:00') ...
 
     Args
     ----
