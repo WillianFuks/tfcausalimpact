@@ -20,6 +20,7 @@ import pytest
 import tensorflow as tf
 import tensorflow_probability as tfp
 
+import causalimpact.data as cidata
 import causalimpact.model as cimodel
 
 tfd = tfp.distributions
@@ -174,7 +175,9 @@ def test_build_default_model(rand_data, pre_int_period, post_int_period):
     prior_level_sd = 0.01
     pre_data = pd.DataFrame(rand_data.iloc[pre_int_period[0]: pre_int_period[1], 0])
     post_data = pd.DataFrame(rand_data.iloc[post_int_period[0]: post_int_period[1], 0])
-    model = cimodel.build_default_model(pre_data, post_data, prior_level_sd, 1, 1)
+    observed_time_series = cidata.build_observed_time_series(pre_data)
+    model = cimodel.build_default_model(observed_time_series, pre_data, post_data,
+                                        prior_level_sd, 1, 1)
     assert isinstance(model, tfp.sts.Sum)
     obs_prior = model.parameters[0].prior
     assert isinstance(obs_prior, tfd.TransformedDistribution)
@@ -188,7 +191,9 @@ def test_build_default_model(rand_data, pre_int_period, post_int_period):
 
     pre_data = pd.DataFrame(rand_data.iloc[pre_int_period[0]: pre_int_period[1], :])
     post_data = pd.DataFrame(rand_data.iloc[post_int_period[0]: post_int_period[1], :])
-    model = cimodel.build_default_model(pre_data, post_data, prior_level_sd, 1, 1)
+    observed_time_series = cidata.build_observed_time_series(pre_data)
+    model = cimodel.build_default_model(observed_time_series, pre_data, post_data,
+                                        prior_level_sd, 1, 1)
     assert isinstance(model, tfp.sts.Sum)
     obs_prior = model.parameters[0].prior
     assert isinstance(obs_prior, tfd.TransformedDistribution)
@@ -208,7 +213,9 @@ def test_build_default_model(rand_data, pre_int_period, post_int_period):
     # test seasonal
     pre_data = pd.DataFrame(rand_data.iloc[pre_int_period[0]: pre_int_period[1], :])
     post_data = pd.DataFrame(rand_data.iloc[post_int_period[0]: post_int_period[1], :])
-    model = cimodel.build_default_model(pre_data, post_data, prior_level_sd, 7, 2)
+    observed_time_series = cidata.build_observed_time_series(pre_data)
+    model = cimodel.build_default_model(observed_time_series, pre_data, post_data,
+                                        prior_level_sd, 7, 2)
     assert isinstance(model, tfp.sts.Sum)
     obs_prior = model.parameters[0].prior
     assert isinstance(obs_prior, tfd.TransformedDistribution)

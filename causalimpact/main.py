@@ -34,16 +34,16 @@ from causalimpact.misc import maybe_unstandardize
 class CausalImpact():
     """
     Main class used to run the Causal Impact algorithm implemented by Google as
-    described in their offical
-    [paper.](https://google.github.io/CausalImpact/CausalImpact.html)
+    described in the offical
+    [paper](https://google.github.io/CausalImpact/CausalImpact.html).
 
     The algorithm basically fits a structural state space model to observed data `y` and
     uses Bayesian inferencing to find the posterior P(z|y) where `z` represents for the
-    chosen model parameters (such as level, trend, season, etc...).
+    chosen model parameters (such as level, trend, season, and so on).
 
-    In this package, the fitting method can be either 'Hamitonian Monte Carlo' (more
-    accurate) or 'Variational Inference' (faster but less accurate), both available on
-    Tensorflow Probability.
+    In this package, the fitting method can be either 'Hamitonian Monte Carlo' or 'hmc'
+    for short (more accurate algorithm but slower) or 'Variational Inference' or 'vi'
+    (faster but less accurate), both available on Tensorflow Probability.
 
     Args
     ----
@@ -215,6 +215,7 @@ class CausalImpact():
         self.model = processed_input['model']
         self.normed_pre_data = processed_input['normed_pre_data']
         self.normed_post_data = processed_input['normed_post_data']
+        self.observed_time_series = processed_input['observed_time_series']
         self.mu_sig = processed_input['mu_sig']
         self._fit_model()
         self._process_posterior_inferences()
@@ -284,20 +285,13 @@ class CausalImpact():
 
     def _fit_model(self) -> None:
         """
-        Use observed data `y` to find the posterior `P(z | y)` where `z` represents the
+        Use observed data `Y` to find the posterior `P(Z|Y)` where `Z` represents the
         structural components that were used for building the model (such as local level
         factor or seasonal components).
         """
-        # type must be cast to `np.float32` as the linear regressor from tensorflow only
-        # works with 32 bytes.
-        observed_time_series = (
-            self.pre_data if self.normed_pre_data is None else self.normed_pre_data
-        ).astype(np.float32)
-        # if operation `iloc` returns a pd.Series, cast it back to pd.DataFrame
-        observed_time_series = pd.DataFrame(observed_time_series.iloc[:, 0])
         model_samples, model_kernel_results = cimodel.fit_model(
             self.model,
-            observed_time_series,
+            self.observed_time_series,
             self.model_args['fit_method'],
         )
         self.model_samples = model_samples
@@ -327,11 +321,6 @@ class CausalImpact():
         Run `inferrer` to process data forecasts and predictions. Results feeds the
         summary table as well as the plotting functionalities.
         """
-        observed_time_series = (
-            self.pre_data if self.normed_pre_data is None else self.normed_pre_data
-        ).astype(np.float32)
-        self.observed_time_series = pd.DataFrame(observed_time_series.iloc[:, 0])
-
         num_steps_forecast = len(self.post_data)
         self.one_step_dist = cimodel.build_one_step_dist(self.model,
                                                          self.observed_time_series,
