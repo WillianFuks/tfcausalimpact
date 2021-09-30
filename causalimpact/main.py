@@ -330,6 +330,7 @@ class CausalImpact():
                                                            self.model_samples,
                                                            num_steps_forecast)
         self.inferences = inferrer.compile_posterior_inferences(
+            self.data.index,
             self.pre_data,
             self.post_data,
             self.one_step_dist,

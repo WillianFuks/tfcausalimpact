@@ -119,29 +119,31 @@ def process_input_data(
       ValueError: if input arguments is `None`.
     """
     _check_empty_inputs(locals())
-    fmt_data = format_input_data(data)
-    pre_data, post_data = process_pre_post_data(fmt_data, pre_period, post_period)
+    data = format_input_data(data)
+    pre_data, post_data = process_pre_post_data(data, pre_period, post_period)
     alpha = process_alpha(alpha)
     model_args = cimodel.process_model_args(model_args if model_args else {})
-    normed_data = (standardize_pre_and_post_data(pre_data, post_data) if
-                   model_args['standardize'] else (None, None, None))
-    normed_pre_data, normed_post_data = normed_data[0], normed_data[1]
-    observed_time_series = build_observed_time_series(
-        pre_data if normed_pre_data is None else normed_pre_data
+    normed_data = (
+        standardize_pre_and_post_data(pre_data, post_data) if model_args['standardize']
+        else (None, None, None)
+    )
+    # if operation `iloc` returns a pd.Series, cast it back to pd.DataFrame
+    observed_time_series = _build_observed_time_series(
+        pre_data if normed_data[0] is None else normed_data[0]
     )
     if model:
         cimodel.check_input_model(model, pre_data, post_data)
     else:
         model = cimodel.build_default_model(
             observed_time_series,
-            normed_pre_data if model_args['standardize'] else pre_data,
-            normed_post_data if model_args['standardize'] else post_data,
+            normed_data[0] if model_args['standardize'] else pre_data,
+            normed_data[1] if model_args['standardize'] else post_data,
             model_args['prior_level_sd'],
             model_args['nseasons'],
             model_args['season_duration']
         )
     return {
-        'data': fmt_data,
+        'data': data,
         'pre_period': pre_period,
         'post_period': post_period,
         'pre_data': pre_data,
@@ -156,25 +158,14 @@ def process_input_data(
     }
 
 
-def build_observed_time_series(pre_data: pd.DataFrame) -> pd.DataFrame:
+def _build_observed_time_series(pre_data: pd.DataFrame) -> pd.DataFrame:
     """
-    Helper method for creating the observed time series data to be used as input for
-    the TFP API. If input data index is of type
-    `pandas.core.indexes.range.RangeIndex`
-    then it's casted to `DatetimeIndex` as required by `TFP==0.14.0`. A dummy date index
-    is created starting from '2020-01-01'.
+    Helper function that works as a mocking point for unit tests.
     """
-    # type must be cast to `np.float32` as the linear regressor from tensorflow only
-    # works with 32 bytes.
-    observed_time_series = pre_data.astype(np.float32)
     # if operation `iloc` returns a pd.Series, cast it back to pd.DataFrame
-    observed_time_series = pd.DataFrame(observed_time_series.iloc[:, 0])
-    if isinstance(pre_data.index, pd.RangeIndex):
-        observed_time_series.set_index(
-            pd.date_range(start='2020-01-01', periods=len(observed_time_series)),
-            inplace=True
-        )
-    return tfp.sts.regularize_series(observed_time_series)
+    observed_time_series = pd.DataFrame(pre_data.iloc[:, 0])
+    return observed_time_series
+
 
 
 def _check_empty_inputs(inputs: Dict[str, Any]) -> None:
@@ -261,8 +252,10 @@ def format_input_data(data: Union[np.array, pd.DataFrame]) -> pd.DataFrame:
         if data.iloc[:, 1:].isna().values.any():
             raise ValueError('Input data cannot have NAN values.')
     # If index is a string of dates, try to convert it to datetimes which helps
-    # in plotting.
+    # in plotting
     data = convert_index_to_datetime(data)
+    # TFP linear regressors only work with float32 data so cast it here already
+    data = data.astype(np.float32)
     return data
 
 
@@ -311,11 +304,17 @@ def process_pre_post_data(
         raise ValueError(f'post_period first value ({post_period[0]}) must '
                          'be bigger than the second value of pre_period '
                          f'({pre_period[1]}).')
-    result = [
-        data.loc[pre_period[0]: pre_period[1], :],
-        data.loc[post_period[0]: post_period[1], :]
+    # Force data to have date index type as required by TFP >= 0.14.0
+    if isinstance(data.index, pd.RangeIndex):
+        data = data.set_index(pd.date_range(start='2020-01-01', periods=len(data)))
+    # Add +1 to make slicing inclusive on both ends as `iloc` doesn't include last value
+    pre_data, post_data = [
+        data.iloc[checked_pre_period[0]: checked_pre_period[1] + 1, :],
+        data.iloc[checked_post_period[0]: checked_post_period[1] + 1, :]
     ]
-    return result
+    pre_data = tfp.sts.regularize_series(pre_data)
+    post_data = tfp.sts.regularize_series(post_data)
+    return pre_data, post_data
 
 
 def validate_y(y: pd.Series) -> None:

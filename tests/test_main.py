@@ -249,14 +249,17 @@ def test_causal_cto_with_custom_model_and_seasons(rand_data, pre_int_period,
 
 
 def test_default_causal_cto_vi_method(rand_data, pre_int_period, post_int_period):
+    freq_rand_data = rand_data.set_index(
+        pd.date_range(start='2020-01-01', periods=len(rand_data))
+    ).astype(np.float32).asfreq(pd.offsets.DateOffset(days=1))
     ci = CausalImpact(rand_data, pre_int_period, post_int_period, model_args=dict(
         fit_method='vi'))
     assert_frame_equal(ci.data, rand_data)
     assert ci.pre_period == pre_int_period
     assert ci.post_period == post_int_period
-    pre_data = rand_data.loc[pre_int_period[0]: pre_int_period[1], :]
+    pre_data = freq_rand_data.iloc[pre_int_period[0]: pre_int_period[1] + 1, :]
     assert_frame_equal(ci.pre_data, pre_data)
-    post_data = rand_data.loc[post_int_period[0]: post_int_period[1], :]
+    post_data = freq_rand_data.iloc[post_int_period[0]: post_int_period[1] + 1, :]
     assert_frame_equal(ci.post_data, post_data)
     assert ci.alpha == 0.05
     normed_pre_data, (mu, sig) = standardize(pre_data)
@@ -323,3 +326,21 @@ def test_default_model_sparse_linear_regression_arma_data():
         global_scale[..., tf.newaxis]
     )
     assert tf.abs(tf.reduce_mean(weights, axis=0).numpy()[1]) < 0.05
+
+
+def test_data_no_freq():
+    data = pd.read_csv('tests/fixtures/btc.csv', parse_dates=True, index_col='Date')
+    training_start = "2020-12-01"
+    training_end = "2021-02-05"
+    treatment_start = "2021-02-08"
+    treatment_end = "2021-02-09"
+    pre_period = [training_start, training_end]
+    post_period = [treatment_start, treatment_end]
+
+    ci = CausalImpact(data, pre_period, post_period)
+
+    freq_data = tfp.sts.regularize_series(data)
+    pre_data = freq_data.loc[pre_period[0]: pre_period[1]]
+    post_data = freq_data.loc[post_period[0]: post_period[1]]
+
+    assert len(ci.inferences) == len(pre_data) + len(post_data)

@@ -175,7 +175,7 @@ def test_build_default_model(rand_data, pre_int_period, post_int_period):
     prior_level_sd = 0.01
     pre_data = pd.DataFrame(rand_data.iloc[pre_int_period[0]: pre_int_period[1], 0])
     post_data = pd.DataFrame(rand_data.iloc[post_int_period[0]: post_int_period[1], 0])
-    observed_time_series = cidata.build_observed_time_series(pre_data)
+    observed_time_series = pd.DataFrame(pre_data.iloc[:, 0]).astype(np.float32)
     model = cimodel.build_default_model(observed_time_series, pre_data, post_data,
                                         prior_level_sd, 1, 1)
     assert isinstance(model, tfp.sts.Sum)
@@ -191,7 +191,7 @@ def test_build_default_model(rand_data, pre_int_period, post_int_period):
 
     pre_data = pd.DataFrame(rand_data.iloc[pre_int_period[0]: pre_int_period[1], :])
     post_data = pd.DataFrame(rand_data.iloc[post_int_period[0]: post_int_period[1], :])
-    observed_time_series = cidata.build_observed_time_series(pre_data)
+    observed_time_series = pd.DataFrame(pre_data.iloc[:, 0]).astype(np.float32)
     model = cimodel.build_default_model(observed_time_series, pre_data, post_data,
                                         prior_level_sd, 1, 1)
     assert isinstance(model, tfp.sts.Sum)
@@ -213,7 +213,7 @@ def test_build_default_model(rand_data, pre_int_period, post_int_period):
     # test seasonal
     pre_data = pd.DataFrame(rand_data.iloc[pre_int_period[0]: pre_int_period[1], :])
     post_data = pd.DataFrame(rand_data.iloc[post_int_period[0]: post_int_period[1], :])
-    observed_time_series = cidata.build_observed_time_series(pre_data)
+    observed_time_series = pd.DataFrame(pre_data.iloc[:, 0]).astype(np.float32)
     model = cimodel.build_default_model(observed_time_series, pre_data, post_data,
                                         prior_level_sd, 7, 2)
     assert isinstance(model, tfp.sts.Sum)
@@ -253,6 +253,9 @@ def test_fit_model(monkeypatch):
                         surrogate_posterior_mock)
     monkeypatch.setattr('causalimpact.model.tf.optimizers.Adam',
                         mock.Mock(return_value='optimizer'))
+    monkeypatch.setattr('causalimpact.model.tf.keras.optimizers.Adam',
+                        mock.Mock(return_value='optimizer'))
+
     monkeypatch.setattr('causalimpact.model.tfp.vi.fit_surrogate_posterior', vi_fit_mock)
 
     class Model:
