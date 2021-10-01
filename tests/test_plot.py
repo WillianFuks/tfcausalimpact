@@ -44,6 +44,24 @@ def inferences(rand_data):
     return df
 
 
+def test_build_data():
+    pre_data = pd.DataFrame([0, 1, np.nan])
+    post_data = pd.DataFrame([3, 4, np.nan], index=[3, 4, 5])
+    inferences = pd.DataFrame([0, 1, 2, 3, 4, 5])
+
+    pre_data, post_data, inferences = plotter.build_data(pre_data, post_data, inferences)
+
+    expected_pre_data = pd.DataFrame([0, 1]).astype(np.float64)
+    pd.testing.assert_frame_equal(pre_data, expected_pre_data)
+
+    expected_post_data = pd.DataFrame([3, 4], index=[3, 4]).astype(np.float64)
+    pd.testing.assert_frame_equal(post_data, expected_post_data)
+
+    expected_inferences = pd.DataFrame([0, 1, 3, 4],
+                                       index=[0, 1, 3, 4]).astype(np.float64)
+    pd.testing.assert_frame_equal(inferences, expected_inferences)
+
+
 def test_plot_original_panel(rand_data, pre_int_period, post_int_period, inferences,
                              monkeypatch):
     plot_mock = mock.Mock()
@@ -87,6 +105,11 @@ def test_plot_original_panel_gap_data(rand_data, pre_int_gap_period, post_int_ga
     plot_mock = mock.Mock()
     pre_data = rand_data.loc[pre_int_gap_period[0]: pre_int_gap_period[1]]
     post_data = rand_data.loc[post_int_gap_period[0]: post_int_gap_period[1]]
+
+    pre_data = pre_data.set_index(pd.RangeIndex(start=0, stop=len(pre_data)))
+    post_data = post_data.set_index(pd.RangeIndex(start=len(pre_data),
+                                    stop=len(pre_data) + len(post_data)))
+
     pre_post_index = pre_data.index.union(post_data.index)
     monkeypatch.setattr('causalimpact.plot.get_plotter', plot_mock)
     plotter.plot(inferences, pre_data, post_data, panels=['original'])
@@ -107,7 +130,7 @@ def test_plot_original_panel_gap_data(rand_data, pre_int_gap_period, post_int_ga
     assert_array_equal(inferences['complete_preds_means'].iloc[1:], ax_args[1][0][1])
     assert ax_args[1][1] == {'color': 'orangered', 'ls': 'dashed', 'label': 'Predicted'}
 
-    ax_mock.axvline.assert_called_with(pre_int_gap_period[1], c='gray', linestyle='--')
+    ax_mock.axvline.assert_called_with(pre_data.index[-1], c='gray', linestyle='--')
 
     ax_args = ax_mock.fill_between.call_args_list[0]
     assert_array_equal(ax_args[0][0], pre_post_index[1:])
@@ -127,6 +150,7 @@ def test_plot_original_panel_date_index(date_rand_data, pre_str_period, post_str
     post_data = date_rand_data.loc[post_str_period[0]: post_str_period[1]]
     pre_post_index = pre_data.index.union(post_data.index)
     monkeypatch.setattr('causalimpact.plot.get_plotter', plot_mock)
+    inferences = inferences.set_index(pre_post_index)
     plotter.plot(inferences, pre_data, post_data, panels=['original'])
     plot_mock.assert_called_once()
     plot_mock.return_value.figure.assert_called_with(figsize=(10, 7))
@@ -167,6 +191,9 @@ def test_plot_original_panel_gap_date_index(date_rand_data, pre_str_gap_period,
     pre_data = date_rand_data.loc[pre_str_gap_period[0]: pre_str_gap_period[1]]
     post_data = date_rand_data.loc[post_str_gap_period[0]: post_str_gap_period[1]]
     pre_post_index = pre_data.index.union(post_data.index)
+    inferences = inferences.set_index(
+        pd.date_range(start=pre_post_index[0], periods=len(inferences))
+    )
     monkeypatch.setattr('causalimpact.plot.get_plotter', plot_mock)
     plotter.plot(inferences, pre_data, post_data, panels=['original'])
     plot_mock.assert_called_once()
@@ -210,6 +237,9 @@ def test_plot_original_panel_date_index_no_freq(date_rand_data, pre_str_period,
     pre_data = dd.loc[pre_str_period[0]: pre_str_period[1]]
     post_data = dd.loc[post_str_period[0]: post_str_period[1]]
     pre_post_index = pre_data.index.union(post_data.index)
+    inferences = inferences.set_index(
+        pd.date_range(start=pre_post_index[0], periods=len(inferences))
+    )
     monkeypatch.setattr('causalimpact.plot.get_plotter', plot_mock)
     plotter.plot(inferences, pre_data, post_data, panels=['original'])
     plot_mock.assert_called_once()
@@ -284,6 +314,11 @@ def test_plot_pointwise_panel_gap_data(rand_data, pre_int_gap_period,
     plot_mock = mock.Mock()
     pre_data = rand_data.loc[pre_int_gap_period[0]: pre_int_gap_period[1]]
     post_data = rand_data.loc[post_int_gap_period[0]: post_int_gap_period[1]]
+
+    pre_data = pre_data.set_index(pd.RangeIndex(start=0, stop=len(pre_data)))
+    post_data = post_data.set_index(pd.RangeIndex(start=len(pre_data),
+                                    stop=len(pre_data) + len(post_data)))
+
     pre_post_index = pre_data.index.union(post_data.index)
     monkeypatch.setattr('causalimpact.plot.get_plotter', plot_mock)
     plotter.plot(inferences, pre_data, post_data, panels=['pointwise'])
@@ -300,7 +335,7 @@ def test_plot_pointwise_panel_gap_data(rand_data, pre_int_gap_period,
     )
     assert ax_args[0][1] == {'label': 'Point Effects', 'ls': 'dashed',
                              'color': 'orangered'}
-    ax_mock.axvline.assert_called_with(pre_int_gap_period[1], c='gray', linestyle='--')
+    ax_mock.axvline.assert_called_with(pre_data.index[-1], c='gray', linestyle='--')
 
     ax_args = ax_mock.fill_between.call_args_list[0]
     assert_array_equal(ax_args[0][0], pre_post_index[1:])
@@ -319,6 +354,7 @@ def test_plot_pointwise_panel_date_index(date_rand_data, pre_str_period, post_st
     pre_data = date_rand_data.loc[pre_str_period[0]: pre_str_period[1]]
     post_data = date_rand_data.loc[post_str_period[0]: post_str_period[1]]
     pre_post_index = pre_data.index.union(post_data.index)
+    inferences = inferences.set_index(pre_post_index)
     monkeypatch.setattr('causalimpact.plot.get_plotter', plot_mock)
     plotter.plot(inferences, pre_data, post_data, panels=['pointwise'])
     plot_mock.assert_called_once()
@@ -356,6 +392,9 @@ def test_plot_pointwise_panel_gap_date_index(date_rand_data, pre_str_gap_period,
     pre_data = date_rand_data.loc[pre_str_gap_period[0]: pre_str_gap_period[1]]
     post_data = date_rand_data.loc[post_str_gap_period[0]: post_str_gap_period[1]]
     pre_post_index = pre_data.index.union(post_data.index)
+    inferences = inferences.set_index(
+        pd.date_range(start=pre_post_index[0], periods=len(inferences))
+    )
     monkeypatch.setattr('causalimpact.plot.get_plotter', plot_mock)
     plotter.plot(inferences, pre_data, post_data, panels=['pointwise'])
     plot_mock.assert_called_once()
@@ -395,6 +434,9 @@ def test_plot_pointwise_panel_date_index_no_freq(date_rand_data, pre_str_period,
     pre_data = dd.loc[pre_str_period[0]: pre_str_period[1]]
     post_data = dd.loc[post_str_period[0]: post_str_period[1]]
     pre_post_index = pre_data.index.union(post_data.index)
+    inferences = inferences.set_index(
+        pd.date_range(start=pre_post_index[0], periods=len(inferences))
+    )
     monkeypatch.setattr('causalimpact.plot.get_plotter', plot_mock)
     plotter.plot(inferences, pre_data, post_data, panels=['pointwise'])
     plot_mock.assert_called_once()
@@ -464,6 +506,11 @@ def test_plot_cumulative_panel_gap_data(rand_data, pre_int_gap_period,
     plot_mock = mock.Mock()
     pre_data = rand_data.loc[pre_int_gap_period[0]: pre_int_gap_period[1]]
     post_data = rand_data.loc[post_int_gap_period[0]: post_int_gap_period[1]]
+
+    pre_data = pre_data.set_index(pd.RangeIndex(start=0, stop=len(pre_data)))
+    post_data = post_data.set_index(pd.RangeIndex(start=len(pre_data),
+                                    stop=len(pre_data) + len(post_data)))
+
     pre_post_index = pre_data.index.union(post_data.index)
     monkeypatch.setattr('causalimpact.plot.get_plotter', plot_mock)
     plotter.plot(inferences, pre_data, post_data, panels=['cumulative'])
@@ -480,7 +527,7 @@ def test_plot_cumulative_panel_gap_data(rand_data, pre_int_gap_period,
     )
     assert ax_args[0][1] == {'label': 'Cumulative Effect', 'ls': 'dashed',
                              'color': 'orangered'}
-    ax_mock.axvline.assert_called_with(pre_int_gap_period[1], c='gray', linestyle='--')
+    ax_mock.axvline.assert_called_with(pre_data.index[-1], c='gray', linestyle='--')
 
     ax_args = ax_mock.fill_between.call_args_list[0]
     assert_array_equal(ax_args[0][0], pre_post_index[1:])
@@ -499,6 +546,7 @@ def test_plot_cumulative_panel_date_index(date_rand_data, pre_str_period,
     pre_data = date_rand_data.loc[pre_str_period[0]: pre_str_period[1]]
     post_data = date_rand_data.loc[post_str_period[0]: post_str_period[1]]
     pre_post_index = pre_data.index.union(post_data.index)
+    inferences = inferences.set_index(pre_post_index)
     monkeypatch.setattr('causalimpact.plot.get_plotter', plot_mock)
     plotter.plot(inferences, pre_data, post_data, panels=['cumulative'])
     plot_mock.assert_called_once()
@@ -536,6 +584,9 @@ def test_plot_cumulative_panel_gap_date_index(date_rand_data, pre_str_gap_period
     pre_data = date_rand_data.loc[pre_str_gap_period[0]: pre_str_gap_period[1]]
     post_data = date_rand_data.loc[post_str_gap_period[0]: post_str_gap_period[1]]
     pre_post_index = pre_data.index.union(post_data.index)
+    inferences = inferences.set_index(
+        pd.date_range(start=pre_post_index[0], periods=len(inferences))
+    )
     monkeypatch.setattr('causalimpact.plot.get_plotter', plot_mock)
     plotter.plot(inferences, pre_data, post_data, panels=['cumulative'])
     plot_mock.assert_called_once()
@@ -575,6 +626,9 @@ def test_plot_cumulative_panel_date_index_no_freq(date_rand_data, pre_str_period
     pre_data = dd.loc[pre_str_period[0]: pre_str_period[1]]
     post_data = dd.loc[post_str_period[0]: post_str_period[1]]
     pre_post_index = pre_data.index.union(post_data.index)
+    inferences = inferences.set_index(
+        pd.date_range(start=pre_post_index[0], periods=len(inferences))
+    )
     monkeypatch.setattr('causalimpact.plot.get_plotter', plot_mock)
     plotter.plot(inferences, pre_data, post_data, panels=['cumulative'])
     plot_mock.assert_called_once()
@@ -689,6 +743,11 @@ def test_plot_original_panel_gap_data_show_is_false(
     plot_mock = mock.Mock()
     pre_data = rand_data.loc[pre_int_gap_period[0]: pre_int_gap_period[1]]
     post_data = rand_data.loc[post_int_gap_period[0]: post_int_gap_period[1]]
+
+    pre_data = pre_data.set_index(pd.RangeIndex(start=0, stop=len(pre_data)))
+    post_data = post_data.set_index(pd.RangeIndex(start=len(pre_data),
+                                    stop=len(pre_data) + len(post_data)))
+
     pre_post_index = pre_data.index.union(post_data.index)
     monkeypatch.setattr("causalimpact.plot.get_plotter", plot_mock)
     plotter.plot(inferences, pre_data, post_data, panels=["original"], show=False)
@@ -709,7 +768,7 @@ def test_plot_original_panel_gap_data_show_is_false(
     assert_array_equal(inferences["complete_preds_means"].iloc[1:], ax_args[1][0][1])
     assert ax_args[1][1] == {"color": "orangered", "ls": "dashed", "label": "Predicted"}
 
-    ax_mock.axvline.assert_called_with(pre_int_gap_period[1], c="gray", linestyle="--")
+    ax_mock.axvline.assert_called_with(pre_data.index[-1], c="gray", linestyle="--")
 
     ax_args = ax_mock.fill_between.call_args_list[0]
     assert_array_equal(ax_args[0][0], pre_post_index[1:])

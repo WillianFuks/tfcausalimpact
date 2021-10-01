@@ -274,7 +274,8 @@ def build_default_model(
           covariates and seasonal patterns.
     """
     components = []
-    obs_sd = observed_time_series.values.std()  # use `values` to avoid batching dims
+    # use `values` to avoid batching dims
+    obs_sd = observed_time_series.std(skipna=True, ddof=0).values[0]
     sd_prior = build_inv_gamma_sd_prior(prior_level_sd)
     sd_prior = build_bijector(sd_prior)
     # This is an approximation to simulate the bsts package from R. It's expected that
@@ -295,6 +296,8 @@ def build_default_model(
         # column is supposed to have response variable `y` then we filter out just the
         # remaining columns for the `X` value.
         complete_data = pd.concat([pre_data, post_data]).astype(np.float32)
+        # Set NaN values to zero so to not break TFP linear regression
+        complete_data.fillna(0, inplace=True)
         linear_component = tfp.sts.SparseLinearRegression(
             design_matrix=complete_data.iloc[:, 1:]
         )

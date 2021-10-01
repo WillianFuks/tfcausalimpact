@@ -50,6 +50,7 @@ def get_lower_upper_percentiles(alpha: float) -> List[float]:
 
 
 def compile_posterior_inferences(
+    original_index: pd.core.indexes.base.Index,
     pre_data: pd.DataFrame,
     post_data: pd.DataFrame,
     one_step_dist: tfd.Distribution,
@@ -65,6 +66,9 @@ def compile_posterior_inferences(
 
     Args
     ----
+      original_index: pd.core.indexes.base.Index
+          Original index from input data. If it's a `RangeIndex` then cast inferences
+          index to be of the same type.
       pre_data: pd.DataFrame
           This is the original input data, that is, it's not standardized.
       post_data: pd.DataFrame
@@ -233,6 +237,8 @@ def compile_posterior_inferences(
         'post_cum_effects_lower',
         'post_cum_effects_upper'
     ]
+    if isinstance(original_index, pd.RangeIndex):
+        inferences.set_index(pd.RangeIndex(start=0, stop=len(inferences)), inplace=True)
     return inferences
 
 

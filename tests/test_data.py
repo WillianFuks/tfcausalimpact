@@ -24,11 +24,12 @@ import causalimpact.misc as misc
 
 
 def test_format_input_data(rand_data):
+    rand_data_32 = rand_data.astype(np.float32)
     data = cidata.format_input_data(rand_data)
-    pd.testing.assert_frame_equal(data, rand_data)
+    pd.testing.assert_frame_equal(data, rand_data_32)
 
     data = pd.DataFrame(cidata.format_input_data(rand_data.iloc[:, 0]))
-    pd.testing.assert_frame_equal(data, pd.DataFrame(rand_data.iloc[:, 0]))
+    pd.testing.assert_frame_equal(data, pd.DataFrame(rand_data_32.iloc[:, 0]))
 
     with pytest.raises(ValueError) as excinfo:
         cidata.format_input_data('test')
@@ -48,20 +49,26 @@ def test_format_input_data(rand_data):
 
 def test_process_pre_post_data(rand_data, date_rand_data):
     pre_data, post_data = cidata.process_pre_post_data(rand_data, [0, 10], [11, 20])
-    pd.testing.assert_frame_equal(pre_data, rand_data.loc[0:10, :])
-    pd.testing.assert_frame_equal(post_data, rand_data.loc[11:20, :])
+    freq_rand_data = rand_data.set_index(
+        pd.date_range(start='2020-01-01', periods=len(rand_data))
+    ).asfreq(pd.offsets.DateOffset(days=1))
 
+    # Add +1 to make it inclusive on both ends
+    pd.testing.assert_frame_equal(pre_data, freq_rand_data.iloc[0:10 + 1, :])
+    pd.testing.assert_frame_equal(post_data, freq_rand_data.iloc[11:20 + 1, :])
+
+    freq_date_rand_data = date_rand_data.asfreq(pd.offsets.DateOffset(days=1))
     pre_data, post_data = cidata.process_pre_post_data(
-        date_rand_data,
+        freq_date_rand_data,
         ['20200101', '20200110'], ['20200111', '20200120']
     )
     pd.testing.assert_frame_equal(
         pre_data,
-        date_rand_data.loc['20200101': '20200110', :]
+        freq_date_rand_data.loc['20200101': '20200110', :]
     )
     pd.testing.assert_frame_equal(
         post_data,
-        date_rand_data.loc['20200111': '20200120', :]
+        freq_date_rand_data.loc['20200111': '20200120', :]
     )
 
     with pytest.raises(ValueError) as excinfo:
@@ -268,19 +275,36 @@ def test_process_input_data(rand_data, pre_int_period, post_int_period, date_ran
         cur_pre_period = pre_int_period if type_ == 'int' else pre_str_period
         cur_post_period = post_int_period if type_ == 'int' else post_str_period
 
+        freq_data = cur_data.copy()
+        if type_ == 'int':
+            freq_data.set_index(
+                pd.date_range(start='2020-01-01', periods=len(cur_data)),
+                inplace=True
+            )
+
+        freq_data = freq_data.asfreq(pd.offsets.DateOffset(days=1))
+        freq_data = freq_data.astype(np.float32)
+
+        if type_ == 'int':
+            cur_pre_data = freq_data.iloc[cur_pre_period[0]: cur_pre_period[1] + 1]
+            cur_post_data = freq_data.iloc[cur_post_period[0]: cur_post_period[1] + 1]
+        else:
+            cur_pre_data = freq_data.loc[cur_pre_period[0]: cur_pre_period[1]]
+            cur_post_data = freq_data.loc[cur_post_period[0]: cur_post_period[1]]
+
         results = cidata.process_input_data(cur_data, cur_pre_period, cur_post_period,
                                             None, {}, 0.05)
 
-        pd.testing.assert_frame_equal(results['data'], cur_data)
+        pd.testing.assert_frame_equal(results['data'], cur_data.astype(np.float32))
         assert results['pre_period'] == cur_pre_period
         assert results['post_period'] == cur_post_period
         pd.testing.assert_frame_equal(
             results['pre_data'],
-            cur_data.loc[cur_pre_period[0]: cur_pre_period[1], :]
+            cur_pre_data
         )
         pd.testing.assert_frame_equal(
             results['post_data'],
-            cur_data.loc[cur_post_period[0]: cur_post_period[1], :]
+            cur_post_data
         )
         np.testing.assert_almost_equal(
             results['normed_pre_data'].mean().values,
@@ -301,17 +325,11 @@ def test_process_input_data(rand_data, pre_int_period, post_int_period, date_ran
             'fit_method': 'vi'
         }
         assert results['alpha'] == 0.05
-        expected_series = cur_data.loc[cur_pre_period[0]: cur_pre_period[1], :]
-        expected_series = expected_series.astype(np.float32)
-        expected_series = pd.DataFrame(expected_series.iloc[:, 0])
-        expected_series = misc.standardize(expected_series)[0]
-        if type_ == 'int':
-            expected_series.set_index(
-                pd.date_range(start='2020-01-01', periods=len(expected_series)),
-                inplace=True
-            )
-        expected_series = tfp.sts.regularize_series(expected_series)
-        pd.testing.assert_frame_equal(results['observed_time_series'], expected_series)
+
+        pd.testing.assert_frame_equal(
+            results['observed_time_series'],
+            misc.standardize(pd.DataFrame(cur_pre_data.iloc[:, 0]))[0]
+        )
         # tests user input model setting
         model = tfp.sts.LocalLevel()
         results = cidata.process_input_data(cur_data, cur_pre_period, cur_post_period,
@@ -375,7 +393,7 @@ def test_process_input_data(rand_data, pre_int_period, post_int_period, date_ran
                         build_default_model_mock)
     monkeypatch.setattr('causalimpact.data.standardize_pre_and_post_data',
                         standardize_pre_and_post_data_mock)
-    monkeypatch.setattr('causalimpact.data.build_observed_time_series',
+    monkeypatch.setattr('causalimpact.data._build_observed_time_series',
                         build_observed_time_series_mock)
 
     results = cidata.process_input_data('input_data', pre_int_period, post_int_period,

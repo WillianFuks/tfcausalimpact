@@ -18,6 +18,7 @@ Plots the analysis obtained in causal impact algorithm.
 """
 
 
+import numpy as np
 import pandas as pd
 
 
@@ -57,7 +58,9 @@ def plot(
                     panel, ', '.join(['"{}"'.format(e) for e in valid_panels])
                 )
             )
+    pre_data, post_data, inferences = build_data(pre_data, post_data, inferences)
     pre_post_index = pre_data.index.union(post_data.index)
+
     post_period_init = post_data.index[0]
     intervention_idx = pre_post_index.get_loc(post_period_init)
     n_panels = len(panels)
@@ -140,6 +143,30 @@ def plot(
         ax.grid(True, color='gainsboro')
     if show:
         plt.show()
+
+
+def build_data(
+    pre_data: pd.DataFrame,
+    post_data: pd.DataFrame,
+    inferences: pd.DataFrame
+) -> [pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    """
+    Input data may contain NaN points due TFP requirement for a valid frequency set. As
+    it breaks the plotting API this function removes those points.
+    """
+    if isinstance(inferences.index, pd.RangeIndex):
+        pre_data = pre_data.set_index(pd.RangeIndex(start=0, stop=len(pre_data)))
+        post_data = post_data.set_index(pd.RangeIndex(start=len(pre_data),
+                                        stop=len(pre_data) + len(post_data)))
+    pre_data_null_index = pre_data[pre_data.iloc[:, 0].isnull()].index
+    post_data_null_index = post_data[post_data.iloc[:, 0].isnull()].index
+
+    pre_data = pre_data.drop(pre_data_null_index).astype(np.float64)
+    post_data = post_data.drop(post_data_null_index).astype(np.float64)
+    inferences = inferences.drop(
+        pre_data_null_index.union(post_data_null_index)
+    ).astype(np.float64)
+    return pre_data, post_data, inferences
 
 
 def get_plotter():  # pragma: no cover

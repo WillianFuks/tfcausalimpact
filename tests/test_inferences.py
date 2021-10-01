@@ -93,6 +93,7 @@ def test_compile_posterior_inferences():
     one_step_dist = OneStepDist()
     posterior_dist = PosteriorDist()
     inferences = inferrer.compile_posterior_inferences(
+        data.index,
         pre_data,
         post_data,
         one_step_dist,
@@ -102,7 +103,7 @@ def test_compile_posterior_inferences():
         niter=niter
     )
 
-    expected_index = np.array([0, 1, 2, 7, 8, 9])
+    expected_index = np.arange(6)
     # test complete_preds_means
     expec_complete_preds_means = pd.DataFrame(
         data=np.array([7, 7, 7, 16, 16, 16]),
@@ -251,6 +252,7 @@ def test_compile_posterior_inferences():
     )
     # test point_effects_means
     net_data = pd.concat([pre_data, post_data])
+    net_data.set_index(pd.RangeIndex(start=0, stop=6), inplace=True)
     expec_point_effects_means = net_data.iloc[:, 0] - inferences['complete_preds_means']
     expec_point_effects_means = pd.DataFrame(
         data=expec_point_effects_means,
@@ -287,6 +289,7 @@ def test_compile_posterior_inferences():
         inferences['point_effects_upper']
     )
     # test post_cum_effects_means
+    post_data = post_data.set_index(pd.RangeIndex(start=3, stop=6))
     post_effects_means = post_data.iloc[:, 0] - inferences['post_preds_means']
     post_effects_means.iloc[len(pre_data) - 1] = 0
     expec_post_cum_effects_means = np.cumsum(post_effects_means)
