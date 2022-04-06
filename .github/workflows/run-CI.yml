@@ -47,18 +47,20 @@ jobs:
           TOX_SKIP_ENV: coverage
 
       - name: Lint
-        if: ${{ runner.python == '3.9' && runner.os == 'ubuntu-latest'}}
+        if: ${{ matrix.python == '3.9' && runner.os == 'Linux'}}
         run: tox -e lint
 
       - name: isort
-        if: ${{ runner.python == '3.9' && runner.os == 'ubuntu-latest'}}
+        if: ${{ matrix.python == '3.9' && runner.os == 'Linux'}}
         run: tox -e isort-check
 
 
       - name: Build Coverage
-        if: ${{ runner.python == '3.9' && runner.os == 'ubuntu-latest'}}
+        if: ${{ matrix.python == '3.9' && runner.os == 'Linux'}}
         run: tox -e coverage
 
-      - name: Upload coverage
-        if: ${{ runner.python == '3.9' && runner.os == 'ubuntu-latest'}}
-        uses: codecov/codecov-action@v1
+      - name: Upload Coveralls
+        if: ${{ matrix.python == '3.9' && runner.os == 'Linux'}}
+        uses: coverallsapp/github-action@master
+          with:
+            github-token: ${{ secrets.GITHUB_TOKEN }}
