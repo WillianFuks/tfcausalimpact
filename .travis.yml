@@ -13,13 +13,13 @@ jobs:
       python: 3.8
       env: TOX_ENV=py38
     - name: "Lint Flake8"
-      python: 3.8
+      python: 3.9
       env: TOX_ENV=lint
     - name: "isort-check"
-      python: 3.8
+      python: 3.9
       env: TOX_ENV=isort-check
     - name: "Travis Coveralls Reporting"
-      python: 3.8
+      python: 3.9
       env: TOX_ENV=travis-coveralls
 
 install:

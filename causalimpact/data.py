@@ -167,7 +167,6 @@ def _build_observed_time_series(pre_data: pd.DataFrame) -> pd.DataFrame:
     return observed_time_series
 
 
-
 def _check_empty_inputs(inputs: Dict[str, Any]) -> None:
     """
     Works as a validator for whether input values for Causal Impact contains empty
@@ -304,7 +303,8 @@ def process_pre_post_data(
         raise ValueError(f'post_period first value ({post_period[0]}) must '
                          'be bigger than the second value of pre_period '
                          f'({pre_period[1]}).')
-    # Force data to have date index type as required by TFP >= 0.14.0
+    # Force data to have date index type as required by TFP >= 0.14.0. This is an ugly
+    # hack but it's the best solution found so far
     if isinstance(data.index, pd.RangeIndex):
         data = data.set_index(pd.date_range(start='2020-01-01', periods=len(data)))
     # Add +1 to make slicing inclusive on both ends as `iloc` doesn't include last value

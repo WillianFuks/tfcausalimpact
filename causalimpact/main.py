@@ -206,6 +206,7 @@ class CausalImpact():
         processed_input = cidata.process_input_data(data, pre_period, post_period,
                                                     model, model_args, alpha)
         self.data = data
+        self.processed_data_index = processed_input['data'].index
         self.pre_period = processed_input['pre_period']
         self.post_period = processed_input['post_period']
         self.pre_data = processed_input['pre_data']
@@ -330,7 +331,7 @@ class CausalImpact():
                                                            self.model_samples,
                                                            num_steps_forecast)
         self.inferences = inferrer.compile_posterior_inferences(
-            self.data.index,
+            self.processed_data_index,
             self.pre_data,
             self.post_data,
             self.one_step_dist,

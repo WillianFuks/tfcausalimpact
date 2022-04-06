@@ -32,15 +32,17 @@ from causalimpact import CausalImpact
 from causalimpact.misc import standardize
 
 
-@pytest.mark.slow
 def test_default_causal_cto(rand_data, pre_int_period, post_int_period):
     ci = CausalImpact(rand_data, pre_int_period, post_int_period)
     assert_frame_equal(ci.data, rand_data)
     assert ci.pre_period == pre_int_period
     assert ci.post_period == post_int_period
-    pre_data = rand_data.loc[pre_int_period[0]: pre_int_period[1], :]
+    new_rand_data = rand_data.set_index(pd.date_range('2020-01-01',
+                                        periods=len(rand_data)))
+    new_rand_data = tfp.sts.regularize_series(new_rand_data).astype(np.float32)
+    pre_data = new_rand_data.iloc[pre_int_period[0]: pre_int_period[1] + 1, :]
     assert_frame_equal(ci.pre_data, pre_data)
-    post_data = rand_data.loc[post_int_period[0]: post_int_period[1], :]
+    post_data = new_rand_data.iloc[post_int_period[0]: post_int_period[1] + 1, :]
     assert_frame_equal(ci.post_data, post_data)
     assert ci.alpha == 0.05
     normed_pre_data, (mu, sig) = standardize(pre_data)
@@ -48,7 +50,7 @@ def test_default_causal_cto(rand_data, pre_int_period, post_int_period):
     normed_post_data = (post_data - mu) / sig
     assert_frame_equal(ci.normed_post_data, normed_post_data)
     assert ci.mu_sig == (mu[0], sig[0])
-    assert ci.model_args == {'fit_method': 'hmc', 'niter': 1000, 'prior_level_sd': 0.01,
+    assert ci.model_args == {'fit_method': 'vi', 'niter': 1000, 'prior_level_sd': 0.01,
                              'season_duration': 1, 'nseasons': 1, 'standardize': True}
     assert isinstance(ci.model, tfp.sts.Sum)
     design_matrix = ci.model.components[1].design_matrix.to_dense()
@@ -71,9 +73,10 @@ def test_default_causal_cto_with_date_index(date_rand_data, pre_str_period,
     assert_frame_equal(ci.data, date_rand_data)
     assert ci.pre_period == pre_str_period
     assert ci.post_period == post_str_period
-    pre_data = date_rand_data.loc[pre_str_period[0]: pre_str_period[1], :]
+    new_date_rand_data = tfp.sts.regularize_series(date_rand_data).astype(np.float32)
+    pre_data = new_date_rand_data.loc[pre_str_period[0]: pre_str_period[1], :]
     assert_frame_equal(ci.pre_data, pre_data)
-    post_data = date_rand_data.loc[post_str_period[0]: post_str_period[1], :]
+    post_data = new_date_rand_data.loc[post_str_period[0]: post_str_period[1], :]
     assert_frame_equal(ci.post_data, post_data)
     assert ci.alpha == 0.05
     normed_pre_data, (mu, sig) = standardize(pre_data)
@@ -81,7 +84,7 @@ def test_default_causal_cto_with_date_index(date_rand_data, pre_str_period,
     normed_post_data = (post_data - mu) / sig
     assert_frame_equal(ci.normed_post_data, normed_post_data)
     assert ci.mu_sig == (mu[0], sig[0])
-    assert ci.model_args == {'fit_method': 'hmc', 'niter': 1000, 'prior_level_sd': 0.01,
+    assert ci.model_args == {'fit_method': 'vi', 'niter': 1000, 'prior_level_sd': 0.01,
                              'season_duration': 1, 'nseasons': 1, 'standardize': True}
     assert isinstance(ci.model, tfp.sts.Sum)
     design_matrix = ci.model.components[1].design_matrix.to_dense()
@@ -104,9 +107,12 @@ def test_default_causal_cto_no_covariates(rand_data, pre_int_period, post_int_pe
     assert_frame_equal(ci.data, rand_data)
     assert ci.pre_period == pre_int_period
     assert ci.post_period == post_int_period
-    pre_data = rand_data.loc[pre_int_period[0]: pre_int_period[1], :]
+    new_rand_data = rand_data.set_index(pd.date_range('2020-01-01',
+                                        periods=len(rand_data)))
+    new_rand_data = tfp.sts.regularize_series(new_rand_data).astype(np.float32)
+    pre_data = new_rand_data.iloc[pre_int_period[0]: pre_int_period[1] + 1, :]
     assert_frame_equal(ci.pre_data, pre_data)
-    post_data = rand_data.loc[post_int_period[0]: post_int_period[1], :]
+    post_data = new_rand_data.iloc[post_int_period[0]: post_int_period[1] + 1, :]
     assert_frame_equal(ci.post_data, post_data)
     assert ci.alpha == 0.05
     normed_pre_data, (mu, sig) = standardize(pre_data)
@@ -114,9 +120,9 @@ def test_default_causal_cto_no_covariates(rand_data, pre_int_period, post_int_pe
     normed_post_data = (post_data - mu) / sig
     assert_frame_equal(ci.normed_post_data, normed_post_data)
     assert ci.mu_sig == (mu[0], sig[0])
-    assert ci.model_args == {'fit_method': 'hmc', 'niter': 1000, 'prior_level_sd': 0.01,
+    assert ci.model_args == {'fit_method': 'vi', 'niter': 1000, 'prior_level_sd': 0.01,
                              'season_duration': 1, 'nseasons': 1, 'standardize': True}
-    assert isinstance(ci.model, tfp.sts.LocalLevel)
+    assert isinstance(ci.model, tfp.sts.Sum)
     assert ci.inferences is not None
     assert ci.inferences.index.dtype == rand_data.index.dtype
     assert ci.summary_data is not None
@@ -125,7 +131,6 @@ def test_default_causal_cto_no_covariates(rand_data, pre_int_period, post_int_pe
     assert ci.model_samples is not None
 
 
-@pytest.mark.slow
 def test_default_causal_cto_with_np_array(rand_data, pre_int_period, post_int_period):
     data = rand_data.values
     ci = CausalImpact(data, pre_int_period, post_int_period)
@@ -133,9 +138,11 @@ def test_default_causal_cto_with_np_array(rand_data, pre_int_period, post_int_pe
     assert ci.pre_period == pre_int_period
     assert ci.post_period == post_int_period
     data = pd.DataFrame(data)
-    pre_data = data.loc[pre_int_period[0]: pre_int_period[1], :]
+    new_data = data.set_index(pd.date_range('2020-01-01', periods=len(data)))
+    new_data = tfp.sts.regularize_series(new_data).astype(np.float32)
+    pre_data = new_data.iloc[pre_int_period[0]: pre_int_period[1] + 1, :]
     assert_frame_equal(ci.pre_data, pre_data)
-    post_data = data.loc[post_int_period[0]: post_int_period[1], :]
+    post_data = new_data.iloc[post_int_period[0]: post_int_period[1] + 1, :]
     assert_frame_equal(ci.post_data, post_data)
     assert ci.alpha == 0.05
     normed_pre_data, (mu, sig) = standardize(pre_data)
@@ -143,7 +150,7 @@ def test_default_causal_cto_with_np_array(rand_data, pre_int_period, post_int_pe
     normed_post_data = (post_data - mu) / sig
     assert_frame_equal(ci.normed_post_data, normed_post_data)
     assert ci.mu_sig == (mu[0], sig[0])
-    assert ci.model_args == {'fit_method': 'hmc', 'niter': 1000, 'prior_level_sd': 0.01,
+    assert ci.model_args == {'fit_method': 'vi', 'niter': 1000, 'prior_level_sd': 0.01,
                              'season_duration': 1, 'nseasons': 1, 'standardize': True}
     assert isinstance(ci.model, tfp.sts.Sum)
     design_matrix = ci.model.components[1].design_matrix.to_dense()
