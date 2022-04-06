@@ -44,7 +44,7 @@ jobs:
       - name: Test with tox
         run: tox
         env:
-          TOX_SKIP_ENV: coverage
+          TOX_SKIP_ENV: coverage,GHA-coverage
 
       - name: Lint
         if: ${{ matrix.python == '3.9' && runner.os == 'Linux'}}
@@ -57,10 +57,11 @@ jobs:
 
       - name: Build Coverage
         if: ${{ matrix.python == '3.9' && runner.os == 'Linux'}}
-        run: tox -e coverage
+        run: tox -e GHA-coverage
 
       - name: Upload Coveralls
         if: ${{ matrix.python == '3.9' && runner.os == 'Linux'}}
         uses: coverallsapp/github-action@master
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
+        path-to-lcov: coverage.xml
