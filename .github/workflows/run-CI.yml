@@ -62,5 +62,5 @@ jobs:
       - name: Upload Coveralls
         if: ${{ matrix.python == '3.9' && runner.os == 'Linux'}}
         uses: coverallsapp/github-action@master
-          with:
-            github-token: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
