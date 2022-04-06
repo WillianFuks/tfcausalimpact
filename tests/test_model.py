@@ -20,7 +20,6 @@ import pytest
 import tensorflow as tf
 import tensorflow_probability as tfp
 
-import causalimpact.data as cidata
 import causalimpact.model as cimodel
 
 tfd = tfp.distributions

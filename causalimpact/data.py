@@ -167,7 +167,6 @@ def _build_observed_time_series(pre_data: pd.DataFrame) -> pd.DataFrame:
     return observed_time_series
 
 
-
 def _check_empty_inputs(inputs: Dict[str, Any]) -> None:
     """
     Works as a validator for whether input values for Causal Impact contains empty
