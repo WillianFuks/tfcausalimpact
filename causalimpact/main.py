@@ -183,14 +183,43 @@ class CausalImpact():
       import tensorflow_probability as tfp
 
 
-      pre_y = data[:70, 0]
-      pre_X = data[:70, 1:]
-      obs_series = data.iloc[:, 0]
+      data = tfp.sts.regularize_series(data).astype('float32')
+      pre_period = ['20200101', '20200401']
+      post_period = ['20200402', '20200501']
+      obs_series = data.loc[:pre_period[1], 0]
+
       local_linear = tfp.sts.LocalLinearTrend(observed_time_series=obs_series)
-      seasonal = tfp.sts.Seasonal(nseasons=7, observed_time_series=obs_series)
+      seasonal = tfp.sts.Seasonal(num_seasons=7, observed_time_series=obs_series)
       model = tfp.sts.Sum([local_linear, seasonal], observed_time_series=obs_series)
 
-      ci = CausalImpact(data, pre_period, post_period, model=model)
+      ci = CausalImpact(data, pre_period, post_period, model=model,
+                        model_args={'standardize': False})
+      print(ci.summary())
+      ```
+
+      Notice that for custom models no assumptions are made about the input data used
+      to build the model. This can incur errors if `standardize` is set to True because
+      the model was built with the regular data and internally tfcausalimpact will
+      standardize it which removes the reference relatively to the model data. To avoid
+      that, all data processing must be held before calling causal impact. For instance:
+
+      ```python
+      import tensorflow_probability as tfp
+      from causalimpact.misc import standardize
+
+
+      data = tfp.sts.regularize_series(data).astype('float32')
+      normed_data = standardize(data)[0]
+      pre_period = ['20200101', '20200401']
+      post_period = ['20200402', '20200501']
+      obs_series = normed_data.loc[:pre_period[1], 0]
+
+      local_linear = tfp.sts.LocalLinearTrend(observed_time_series=obs_series)
+      seasonal = tfp.sts.Seasonal(num_seasons=7, observed_time_series=obs_series)
+      model = tfp.sts.Sum([local_linear, seasonal], observed_time_series=obs_series)
+
+      ci = CausalImpact(data, pre_period, post_period, model=model,
+                        model_args={'standardize': True})
       print(ci.summary())
       ```
     """
