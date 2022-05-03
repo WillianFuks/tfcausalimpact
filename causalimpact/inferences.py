@@ -73,8 +73,8 @@ def compile_posterior_inferences(
       mask: np.array
           Some points in `post_data` may be `NaN` values given the
           `tfp.sts.regularize_series` transformation. In order to avoid those points from
-          breaking the posterior inference by adding `NaN`s in results, a boolean mask is
-          created to drop out those points.
+          breaking the posterior inference, a boolean mask is created to drop out those
+          points.
       pre_data: pd.DataFrame
           This is the original input data, that is, it's not standardized.
       post_data: pd.DataFrame
