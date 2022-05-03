@@ -113,6 +113,11 @@ def process_input_data(
         alpha: float
         mu_sig: Tuple[float, float]
             Mean and standard deviation used to normalize just the response variable `y`.
+        mask: np.array[bool]
+            Boolean array indicating if there are `NaN` values after
+            `tfp.sts.regularize_series` was applied, indicating that the input data has
+            holes in its index which forces null values for accomodating the frequency
+            properly.
 
     Raises
     ------
@@ -121,13 +126,14 @@ def process_input_data(
     _check_empty_inputs(locals())
     data = format_input_data(data)
     pre_data, post_data = process_pre_post_data(data, pre_period, post_period)
+    mask = _build_nan_mask(post_data)
     alpha = process_alpha(alpha)
     model_args = cimodel.process_model_args(model_args if model_args else {})
     normed_data = (
         standardize_pre_and_post_data(pre_data, post_data) if model_args['standardize']
         else (None, None, None)
     )
-    # if operation `iloc` returns a pd.Series, cast it back to pd.DataFrame
+    # If operation `iloc` returns a pd.Series, cast it back to pd.DataFrame
     observed_time_series = _build_observed_time_series(
         pre_data if normed_data[0] is None else normed_data[0]
     )
@@ -154,8 +160,18 @@ def process_input_data(
         'model': model,
         'model_args':  model_args,
         'alpha': alpha,
-        'mu_sig': normed_data[2]
+        'mu_sig': normed_data[2],
+        'mask': mask
     }
+
+
+def _build_nan_mask(post_data: pd.DataFrame) -> np.array:
+    """
+    After applying `tfp.sts.regularize_series`, `NaN` values may end up being present
+    in `post_data`. A boolean filter tracks which points are not null for filtering
+    later on.
+    """
+    return post_data.iloc[:, 0].notna().values
 
 
 def _build_observed_time_series(pre_data: pd.DataFrame) -> pd.DataFrame:

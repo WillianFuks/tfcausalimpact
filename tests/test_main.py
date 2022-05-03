@@ -203,6 +203,7 @@ def test_plotter(monkeypatch, rand_data, pre_int_period, post_int_period):
     ci.inferences = 'inferences'
     ci.pre_data = 'pre_data'
     ci.post_data = 'post_data'
+    ci._mask = slice(0, len(ci.post_data))
     ci.plot()
     plotter_mock.plot.assert_called_with('inferences', 'pre_data', 'post_data',
                                          panels=['original', 'pointwise', 'cumulative'],
@@ -351,3 +352,75 @@ def test_data_no_freq():
     post_data = freq_data.loc[post_period[0]: post_period[1]]
 
     assert len(ci.inferences) == len(pre_data) + len(post_data)
+
+
+def test_post_data_nan_values_removed():
+    """
+    Related to issue #51 where some points in post_data can end up having `NaN` values
+    """
+    data = pd.DataFrame(np.random.rand(100, 2))
+    data.set_index(pd.date_range('20200101', periods=len(data)), inplace=True)
+    data.iloc[:, 0].loc['20200302':] += 1
+    _mask_ = data.index.isin(['20200303', '20200304', '20200404']) == False  # noqa: E712
+    data = data[_mask_]
+    expected_mask = np.array([True] * (39))  # 39 post data points
+    expected_mask[1] = False  # '20200303'
+    expected_mask[2] = False  # '20200304'
+    expected_mask[33] = False  # '20200404'
+    pre_period = ['20200101', '20200301']
+    post_period = ['20200302', '20200409']
+    ci = CausalImpact(data, pre_period, post_period)
+
+    np.testing.assert_equal(ci._mask, expected_mask)
+    assert '20200303' not in ci.inferences
+    assert '20200304' not in ci.inferences
+    assert '20200404' not in ci.inferences
+    inferences = ci.inferences.loc[post_period[0]: post_period[1]]
+    assert inferences.post_cum_y.isna().sum() == 0
+
+    assert ci.summary_data['average']['actual'] > 0
+    assert ci.summary_data['cumulative']['actual'] > 0
+    assert ci.summary_data['average']['predicted'] > 0
+    assert ci.summary_data['cumulative']['predicted'] > 0
+    assert ci.summary_data['average']['abs_effect'] > 0
+    assert ci.summary_data['cumulative']['abs_effect'] > 0
+
+
+def test_custom_model_post_data_with_index_freq_holes():
+    data = pd.DataFrame(np.random.rand(100, 2)).astype(np.float32)
+    data.set_index(pd.date_range('20200101', periods=len(data)), inplace=True)
+    pre_period = ['20200101', '20200301']
+    post_period = ['20200302', '20200409']
+    data = tfp.sts.regularize_series(data)
+    pre_data = data.loc[pre_period[0]: pre_period[1]]
+    data.iloc[:, 0].loc['20200302':] += 1
+    _mask_ = data.index.isin(['20200303', '20200304', '20200404']) == False  # noqa: E712
+    data = data[_mask_]
+    # Apply regularize again to force design matrix to have proper shape
+    reg_data = tfp.sts.regularize_series(data)
+    expected_mask = np.array([True] * (39))  # 39 post data points
+    expected_mask[1] = False  # '20200303'
+    expected_mask[2] = False  # '20200304'
+    expected_mask[33] = False  # '20200404'
+    observed_time_series = pre_data.iloc[:, 0].astype(np.float32)
+    level = tfp.sts.LocalLevel(observed_time_series=observed_time_series)
+    design_matrix_data = reg_data.iloc[:, 1:].fillna(0).values.reshape(
+        -1, data.shape[1] - 1)
+    linear = tfp.sts.LinearRegression(design_matrix=design_matrix_data)
+    model = tfp.sts.Sum([level, linear], observed_time_series=observed_time_series)
+    ci = CausalImpact(data, pre_period, post_period, model=model,
+                      model_args={'standardize': False})
+
+    np.testing.assert_equal(ci._mask, expected_mask)
+    assert '20200303' not in ci.inferences
+    assert '20200304' not in ci.inferences
+    assert '20200404' not in ci.inferences
+    inferences = ci.inferences.loc[post_period[0]: post_period[1]]
+    assert inferences.post_cum_y.isna().sum() == 0
+
+    assert ci.summary_data['average']['actual'] > 0
+    assert ci.summary_data['cumulative']['actual'] > 0
+    assert ci.summary_data['average']['predicted'] > 0
+    assert ci.summary_data['cumulative']['predicted'] > 0
+    assert ci.summary_data['average']['abs_effect'] > 0
+    assert ci.summary_data['cumulative']['abs_effect'] > 0
