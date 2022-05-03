@@ -361,8 +361,9 @@ def test_post_data_nan_values_removed():
     data = pd.DataFrame(np.random.rand(100, 2))
     data.set_index(pd.date_range('20200101', periods=len(data)), inplace=True)
     data.iloc[:, 0].loc['20200302':] += 1
-    data = data[data.index.isin(['20200303', '20200304', '20200404']) == False]
-    expected_mask = np.array([True] * (39)) # 39 post data points
+    _mask_ = data.index.isin(['20200303', '20200304', '20200404']) == False  # noqa: E712
+    data = data[_mask_]
+    expected_mask = np.array([True] * (39))  # 39 post data points
     expected_mask[1] = False  # '20200303'
     expected_mask[2] = False  # '20200304'
     expected_mask[33] = False  # '20200404'
@@ -393,21 +394,22 @@ def test_custom_model_post_data_with_index_freq_holes():
     data = tfp.sts.regularize_series(data)
     pre_data = data.loc[pre_period[0]: pre_period[1]]
     data.iloc[:, 0].loc['20200302':] += 1
-    data = data[data.index.isin(['20200303', '20200304', '20200404']) == False]
+    _mask_ = data.index.isin(['20200303', '20200304', '20200404']) == False  # noqa: E712
+    data = data[_mask_]
     # Apply regularize again to force design matrix to have proper shape
     reg_data = tfp.sts.regularize_series(data)
-    expected_mask = np.array([True] * (39)) # 39 post data points
+    expected_mask = np.array([True] * (39))  # 39 post data points
     expected_mask[1] = False  # '20200303'
     expected_mask[2] = False  # '20200304'
     expected_mask[33] = False  # '20200404'
     observed_time_series = pre_data.iloc[:, 0].astype(np.float32)
     level = tfp.sts.LocalLevel(observed_time_series=observed_time_series)
     design_matrix_data = reg_data.iloc[:, 1:].fillna(0).values.reshape(
-        -1, data.shape[1] -1)
+        -1, data.shape[1] - 1)
     linear = tfp.sts.LinearRegression(design_matrix=design_matrix_data)
     model = tfp.sts.Sum([level, linear], observed_time_series=observed_time_series)
     ci = CausalImpact(data, pre_period, post_period, model=model,
-        model_args={'standardize': False})
+                      model_args={'standardize': False})
 
     np.testing.assert_equal(ci._mask, expected_mask)
     assert '20200303' not in ci.inferences

@@ -1,3 +1,5 @@
 pytest
 mock
 pytest-xdist
+flake8
+isort

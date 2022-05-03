@@ -399,7 +399,6 @@ def test_process_input_data(rand_data, pre_int_period, post_int_period, date_ran
     monkeypatch.setattr('causalimpact.data._build_nan_mask',
                         build_mask_mock)
 
-
     results = cidata.process_input_data('input_data', pre_int_period, post_int_period,
                                         'model', {}, 0.05)
     format_input_data_mock.assert_called_once_with('input_data')

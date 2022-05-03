@@ -131,7 +131,7 @@ def compile_posterior_inferences(
     pre_preds_lower = pd.Series(pre_preds_lower, index=pre_data.index)
     pre_preds_upper = pd.Series(pre_preds_upper, index=pre_data.index)
     # Post inference
-    post_preds_means = posterior_dist.mean() # shape (len(post_data), 1)
+    post_preds_means = posterior_dist.mean()  # shape (len(post_data), 1)
     post_preds_means = pd.Series(
         np.squeeze(
             maybe_unstandardize(post_preds_means[mask], mu_sig)

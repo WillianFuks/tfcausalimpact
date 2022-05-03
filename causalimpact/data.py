@@ -173,6 +173,7 @@ def _build_nan_mask(post_data: pd.DataFrame) -> np.array:
     """
     return post_data.iloc[:, 0].notna().values
 
+
 def _build_observed_time_series(pre_data: pd.DataFrame) -> pd.DataFrame:
     """
     Helper function that works as a mocking point for unit tests.
