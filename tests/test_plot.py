@@ -46,8 +46,9 @@ def inferences(rand_data):
 
 def test_build_data():
     pre_data = pd.DataFrame([0, 1, np.nan])
-    post_data = pd.DataFrame([3, 4, np.nan], index=[3, 4, 5])
-    inferences = pd.DataFrame([0, 1, 2, 3, 4, 5])
+    # `post_data` is assumed to not have `NaN` values already
+    post_data = pd.DataFrame([3, 4], index=[3, 4])
+    inferences = pd.DataFrame([0, 1, 2, 3, 4])
 
     pre_data, post_data, inferences = plotter.build_data(pre_data, post_data, inferences)
 

@@ -51,6 +51,7 @@ def get_lower_upper_percentiles(alpha: float) -> List[float]:
 
 def compile_posterior_inferences(
     original_index: pd.core.indexes.base.Index,
+    mask,
     pre_data: pd.DataFrame,
     post_data: pd.DataFrame,
     one_step_dist: tfd.Distribution,
@@ -69,6 +70,11 @@ def compile_posterior_inferences(
       original_index: pd.core.indexes.base.Index
           Original index from input data. If it's a `RangeIndex` then cast inferences
           index to be of the same type.
+      mask: np.array
+          Some points in `post_data` may be `NaN` values given the
+          `tfp.sts.regularize_series` transformation. In order to avoid those points from
+          breaking the posterior inference by adding `NaN`s in results, a boolean mask is
+          created to drop out those points.
       pre_data: pd.DataFrame
           This is the original input data, that is, it's not standardized.
       post_data: pd.DataFrame
@@ -92,6 +98,7 @@ def compile_posterior_inferences(
           Final dataframe with all data related to one-step predictions and forecasts.
     """
     lower_percen, upper_percen = get_lower_upper_percentiles(alpha)
+    post_data = post_data[mask]
     # Integrates pre and post index for cumulative index data.
     cum_index = build_cum_index(pre_data.index, post_data.index)
     # We create a pd.Series with a single 0 (zero) value to work as the initial value
@@ -105,7 +112,7 @@ def compile_posterior_inferences(
     )  # shape (niter, n_forecasts)
     simulated_post_ys = posterior_dist.sample(niter)  # shape (niter, n_forecasts, 1)
     simulated_post_ys = maybe_unstandardize(
-        np.squeeze(simulated_post_ys.numpy()),
+        np.squeeze(simulated_post_ys.numpy())[:, mask],
         mu_sig
     )  # shape (niter, n_forecasts)
     # Pre inference
@@ -124,10 +131,10 @@ def compile_posterior_inferences(
     pre_preds_lower = pd.Series(pre_preds_lower, index=pre_data.index)
     pre_preds_upper = pd.Series(pre_preds_upper, index=pre_data.index)
     # Post inference
-    post_preds_means = posterior_dist.mean()
+    post_preds_means = posterior_dist.mean() # shape (len(post_data), 1)
     post_preds_means = pd.Series(
         np.squeeze(
-            maybe_unstandardize(post_preds_means, mu_sig)
+            maybe_unstandardize(post_preds_means[mask], mu_sig)
         ),
         index=post_data.index
     )

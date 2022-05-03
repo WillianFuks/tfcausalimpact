@@ -380,6 +380,7 @@ def test_process_input_data(rand_data, pre_int_period, post_int_period, date_ran
                                                        'mu_sig')
     build_observed_time_series_mock = mock.Mock()
     build_observed_time_series_mock.return_value = 'observed_time_series'
+    build_mask_mock = mock.Mock(return_value='mask')
 
     monkeypatch.setattr('causalimpact.data.format_input_data', format_input_data_mock)
     monkeypatch.setattr('causalimpact.data.process_pre_post_data',
@@ -395,6 +396,9 @@ def test_process_input_data(rand_data, pre_int_period, post_int_period, date_ran
                         standardize_pre_and_post_data_mock)
     monkeypatch.setattr('causalimpact.data._build_observed_time_series',
                         build_observed_time_series_mock)
+    monkeypatch.setattr('causalimpact.data._build_nan_mask',
+                        build_mask_mock)
+
 
     results = cidata.process_input_data('input_data', pre_int_period, post_int_period,
                                         'model', {}, 0.05)
@@ -425,7 +429,8 @@ def test_process_input_data(rand_data, pre_int_period, post_int_period, date_ran
             'season_duration': 1
         },
         'alpha': 0.05,
-        'mu_sig': 'mu_sig'
+        'mu_sig': 'mu_sig',
+        'mask': 'mask'
     }
 
     results = cidata.process_input_data('input_data', pre_int_period, post_int_period,
@@ -450,5 +455,6 @@ def test_process_input_data(rand_data, pre_int_period, post_int_period, date_ran
             'season_duration': 1
         },
         'alpha': 0.05,
-        'mu_sig': 'mu_sig'
+        'mu_sig': 'mu_sig',
+        'mask': 'mask'
     }

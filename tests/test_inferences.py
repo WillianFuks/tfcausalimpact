@@ -57,6 +57,7 @@ def test_compile_posterior_inferences():
     sig = 2
     mu_sig = (mu, sig)
     niter = 10
+    mask = np.array([True] * len(post_data))
 
     class OneStepDist:
         def sample(self, niter):
@@ -94,6 +95,7 @@ def test_compile_posterior_inferences():
     posterior_dist = PosteriorDist()
     inferences = inferrer.compile_posterior_inferences(
         data.index,
+        mask,
         pre_data,
         post_data,
         one_step_dist,

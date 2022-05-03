@@ -222,6 +222,36 @@ class CausalImpact():
                         model_args={'standardize': True})
       print(ci.summary())
       ```
+
+      Custom models also requires that the data won't have any "holes" on its estimated
+      frequency otherwise it won't work as well. This can be a problem when working
+      with linear regression that requires the whole data to be already valid for running
+      inference.  To avoid any issue, one way to handle that is to apply
+      `tfp.sts.regularize_series` to the input data and fill with zeros remaining
+      covariates that end up being null. For instance:
+
+      ```python
+          from causalimpact.misc import standardize
+
+
+          pre_period = ['20200101', '20200311']
+          post_period = ['20200312', '20200409']
+          reg_data = tfp.sts.regularize_series(data)
+          normed_data = standardize(reg_data.astype(np.float32))[0]
+          obs_data = normed_data.loc[pre_period[0]: pre_period[1].iloc[:, 0]
+
+          design_matrix_data = normed_data.iloc[:, 1:].fillna(0).values.reshape(
+            -1, normed_data.shape[1] -1)
+
+          linear_level = tfp.sts.LocalLinearTrend(observed_time_series=obs_data)
+          linear_reg = tfp.sts.LinearRegression(design_matrix=design_matrix_data)
+          model = tfp.sts.Sum([linear_level, linear_reg], observed_time_series=obs_data)
+
+
+          ci = CausalImpact(data, pre_period, post_period, model=model)
+      ```
+
+
     """
     def __init__(
         self,
@@ -247,6 +277,7 @@ class CausalImpact():
         self.normed_post_data = processed_input['normed_post_data']
         self.observed_time_series = processed_input['observed_time_series']
         self.mu_sig = processed_input['mu_sig']
+        self._mask = processed_input['mask']
         self._fit_model()
         self._process_posterior_inferences()
         self._summarize_inferences()
@@ -278,8 +309,8 @@ class CausalImpact():
             `import matplotlib.pyplot as plt; ax = plt.gca()` or the figure:
             `fig = plt.gcf()`. Defaults to `True`.
         """
-        plotter.plot(self.inferences, self.pre_data, self.post_data, panels=panels,
-                     figsize=figsize, show=show)
+        plotter.plot(self.inferences, self.pre_data, self.post_data[self._mask],
+                     panels=panels, figsize=figsize, show=show)
 
     def summary(self, output: str = 'summary', digits: int = 2) -> str:
         """
@@ -329,9 +360,15 @@ class CausalImpact():
 
     def _summarize_inferences(self) -> None:
         """
-        After processing predictions and forecasts, use these values to build the
-        summary data used for reporting and plotting. Computes the estimated p-value
-        for determining if the impact is statistically significant or not.
+        After processing predictions and forecasts, uses these values to build the
+        summary data required for reporting and plotting.
+
+        As the addition of the frequency step when processing input data can add `NaN`
+        values in data, a boolean mask identifying those potential holes is created and a
+        filter is applied for its removal.
+
+        Finishes by estimating the p-value for determining if the impact is statistically
+        significant or not.
         """
         post_preds_means = self.inferences['post_preds_means']
         post_data_sum = self.post_data.iloc[:, 0].sum()
@@ -339,11 +376,13 @@ class CausalImpact():
         simulated_ys = maybe_unstandardize(
             np.squeeze(self.posterior_dist.sample(niter).numpy()),
             self.mu_sig
+        )[:, self._mask]
+        self.summary_data = inferrer.summarize_posterior_inferences(
+            post_preds_means,
+            self.post_data[self._mask],
+            simulated_ys,
+            self.alpha
         )
-        self.summary_data = inferrer.summarize_posterior_inferences(post_preds_means,
-                                                                    self.post_data,
-                                                                    simulated_ys,
-                                                                    self.alpha)
         self.p_value = inferrer.compute_p_value(simulated_ys, post_data_sum)
 
     def _process_posterior_inferences(self) -> None:
@@ -361,6 +400,7 @@ class CausalImpact():
                                                            num_steps_forecast)
         self.inferences = inferrer.compile_posterior_inferences(
             self.processed_data_index,
+            self._mask,
             self.pre_data,
             self.post_data,
             self.one_step_dist,

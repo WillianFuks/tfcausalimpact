@@ -151,21 +151,19 @@ def build_data(
     inferences: pd.DataFrame
 ) -> [pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     """
-    Input data may contain NaN points due TFP requirement for a valid frequency set. As
-    it breaks the plotting API this function removes those points.
+    Input pre_data may contain NaN points due TFP requirement for a valid frequency set.
+    As it may break the plotting API, this function removes those points.
+
+    `post_data` has its potential `NaN` values already removed in main function.
     """
     if isinstance(inferences.index, pd.RangeIndex):
         pre_data = pre_data.set_index(pd.RangeIndex(start=0, stop=len(pre_data)))
         post_data = post_data.set_index(pd.RangeIndex(start=len(pre_data),
                                         stop=len(pre_data) + len(post_data)))
     pre_data_null_index = pre_data[pre_data.iloc[:, 0].isnull()].index
-    post_data_null_index = post_data[post_data.iloc[:, 0].isnull()].index
-
     pre_data = pre_data.drop(pre_data_null_index).astype(np.float64)
-    post_data = post_data.drop(post_data_null_index).astype(np.float64)
-    inferences = inferences.drop(
-        pre_data_null_index.union(post_data_null_index)
-    ).astype(np.float64)
+    post_data = post_data.astype(np.float64)
+    inferences = inferences.drop(pre_data_null_index).astype(np.float64)
     return pre_data, post_data, inferences
 
 
