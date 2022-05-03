@@ -32,11 +32,6 @@ from causalimpact import CausalImpact
 from causalimpact.misc import standardize
 
 
-SEED = 1234
-np.random.seed(SEED)
-tf.random.set_seed(SEED)
-
-
 def test_default_causal_cto(rand_data, pre_int_period, post_int_period):
     ci = CausalImpact(rand_data, pre_int_period, post_int_period)
     assert_frame_equal(ci.data, rand_data)
