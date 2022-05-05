@@ -32,7 +32,7 @@ from causalimpact import CausalImpact
 from causalimpact.misc import standardize
 
 
-seed = 1234
+seed = 123
 tf.random.set_seed(seed)
 np.random.seed(seed)
 
