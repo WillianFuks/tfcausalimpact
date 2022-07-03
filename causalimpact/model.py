@@ -232,12 +232,11 @@ def build_bijector(dist: tfd.Distribution) -> tfd.Distribution:
 
 
 def build_default_model(
+    model_components: List[tfp.sts.StructuralTimeSeries],
     observed_time_series: pd.DataFrame,
     pre_data: pd.DataFrame,
     post_data: pd.DataFrame,
-    prior_level_sd: float,
-    nseasons: int,
-    season_duration: int
+    prior_level_sd: float
 ) -> tfp.sts.StructuralTimeSeries:
     """
     When input model is `None` then proceeds to build a default `tfp.sts.LocalLevel`
@@ -298,17 +297,19 @@ def build_default_model(
         complete_data = pd.concat([pre_data, post_data]).astype(np.float32)
         # Set NaN values to zero so to not break TFP linear regression
         complete_data.fillna(0, inplace=True)
-        linear_component = tfp.sts.SparseLinearRegression(
-            design_matrix=complete_data.iloc[:, 1:]
-        )
-        components.append(linear_component)
-    if nseasons > 1:
-        seasonal_component = tfp.sts.Seasonal(
-            num_seasons=nseasons,
-            num_steps_per_season=season_duration,
-            observed_time_series=observed_time_series
-        )
-        components.append(seasonal_component)
+
+        components.append(model_components)
+        # linear_component = tfp.sts.SparseLinearRegression(
+        #     design_matrix=complete_data.iloc[:, 1:]
+        # )
+        # components.append(linear_component)
+    # if nseasons > 1:
+    #     seasonal_component = tfp.sts.Seasonal(
+    #         num_seasons=nseasons,
+    #         num_steps_per_season=season_duration,
+    #         observed_time_series=observed_time_series
+    #     )
+    #     components.append(seasonal_component)
     # Model must be built with `tfp.sts.Sum` so to add the observed noise `epsilon`
     # parameter.
     model = tfp.sts.Sum(components, observed_time_series=observed_time_series,
