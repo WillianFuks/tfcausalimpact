@@ -31,6 +31,10 @@ from pandas.util.testing import assert_frame_equal
 from causalimpact import CausalImpact
 from causalimpact.misc import standardize
 
+seed = 123
+tf.random.set_seed(seed)
+np.random.seed(seed)
+
 
 def test_default_causal_cto(rand_data, pre_int_period, post_int_period):
     ci = CausalImpact(rand_data, pre_int_period, post_int_period)
