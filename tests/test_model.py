@@ -153,23 +153,6 @@ def test_check_input_model():
         cimodel.check_input_model(model, pre_data, post_data)
 
 
-def test_SquareRootBijector():
-    bijector = cimodel.SquareRootBijector()
-    assert bijector.name == 'square_root_bijector'
-    x = np.array([3.0, 4.0])
-    y = np.array([2.0, 3.0])
-    np.testing.assert_almost_equal(bijector.forward(x), np.sqrt(x))
-    np.testing.assert_almost_equal(bijector.inverse(y), np.square(y))
-    np.testing.assert_almost_equal(
-        bijector.forward_log_det_jacobian(x, event_ndims=0),
-        -.5 * np.log(4.0 * x)
-    )
-    np.testing.assert_almost_equal(
-        bijector.inverse_log_det_jacobian(y, event_ndims=0),
-        np.log(2 * y)
-    )
-
-
 def test_build_default_model(rand_data, pre_int_period, post_int_period):
     prior_level_sd = 0.01
     pre_data = pd.DataFrame(rand_data.iloc[pre_int_period[0]: pre_int_period[1], 0])
@@ -180,11 +163,11 @@ def test_build_default_model(rand_data, pre_int_period, post_int_period):
     assert isinstance(model, tfp.sts.Sum)
     obs_prior = model.parameters[0].prior
     assert isinstance(obs_prior, tfd.TransformedDistribution)
-    assert isinstance(obs_prior.bijector, cimodel.SquareRootBijector)
+    assert isinstance(obs_prior.bijector, tfp.bijectors.Power)
     assert isinstance(obs_prior.distribution, tfd.InverseGamma)
     level_prior = model.parameters[1].prior
     assert isinstance(level_prior, tfd.TransformedDistribution)
-    assert isinstance(level_prior.bijector, cimodel.SquareRootBijector)
+    assert isinstance(level_prior.bijector, tfp.bijectors.Power)
     assert isinstance(level_prior.distribution, tfd.InverseGamma)
     assert level_prior.dtype == tf.float32
 
@@ -196,11 +179,11 @@ def test_build_default_model(rand_data, pre_int_period, post_int_period):
     assert isinstance(model, tfp.sts.Sum)
     obs_prior = model.parameters[0].prior
     assert isinstance(obs_prior, tfd.TransformedDistribution)
-    assert isinstance(obs_prior.bijector, cimodel.SquareRootBijector)
+    assert isinstance(obs_prior.bijector, tfp.bijectors.Power)
     assert isinstance(obs_prior.distribution, tfd.InverseGamma)
     level_prior = model.parameters[1].prior
     assert isinstance(level_prior, tfd.TransformedDistribution)
-    assert isinstance(level_prior.bijector, cimodel.SquareRootBijector)
+    assert isinstance(level_prior.bijector, tfp.bijectors.Power)
     assert isinstance(level_prior.distribution, tfd.InverseGamma)
     assert level_prior.dtype == tf.float32
     linear = model.components[1]
@@ -218,12 +201,12 @@ def test_build_default_model(rand_data, pre_int_period, post_int_period):
     assert isinstance(model, tfp.sts.Sum)
     obs_prior = model.parameters[0].prior
     assert isinstance(obs_prior, tfd.TransformedDistribution)
-    assert isinstance(obs_prior.bijector, cimodel.SquareRootBijector)
+    assert isinstance(obs_prior.bijector, tfp.bijectors.Power)
     assert isinstance(obs_prior.distribution, tfd.InverseGamma)
     assert obs_prior.dtype == tf.float32
     level_prior = model.parameters[1].prior
     assert isinstance(level_prior, tfd.TransformedDistribution)
-    assert isinstance(level_prior.bijector, cimodel.SquareRootBijector)
+    assert isinstance(level_prior.bijector, tfp.bijectors.Power)
     assert isinstance(level_prior.distribution, tfd.InverseGamma)
     assert level_prior.dtype == tf.float32
     linear = model.components[1]

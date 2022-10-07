@@ -226,8 +226,8 @@ def build_bijector(dist: tfd.Distribution) -> tfd.Distribution:
       new_dist: tfd.Distribution
           New distribution given by `y = G(X)`.
     """
-    bijector = SquareRootBijector()
-    new_dist = tfd.TransformedDistribution(dist, bijector)
+    sqrt_bi = tfb.Power(.5)
+    new_dist = tfd.TransformedDistribution(dist, sqrt_bi)
     return new_dist
 
 
@@ -443,104 +443,3 @@ def build_posterior_dist(
         parameter_samples=parameter_samples,
         num_steps_forecast=num_steps_forecast
     )
-
-
-class SquareRootBijector(tfb.Bijector):
-    """
-    Compute `Y = g(X) = X ** (1 / 2) which transforms variance into standard deviation.
-    Main reference for building this bijector is the original [PowerTransform](https://github.com/tensorflow/probability/blob/v0.11.1/tensorflow_probability/python/bijectors/power_transform.py) # noqa: E501
-    """
-    def __init__(
-        self,
-        validate_args: bool = False,
-        name: str = 'square_root_bijector'
-    ):
-        """
-        Args
-        ----
-          validate_args: bool
-              Indicates whether arguments should be checked for correctness.
-          name: str
-              Name given to ops managed by this object.
-        """
-        # Without these `parameters` the code won't be compatible with future versions
-        # of tfp:
-        # https://github.com/tensorflow/probability/issues/1202
-        parameters = dict(locals())
-        with tf.name_scope(name) as name:
-            super().__init__(
-                forward_min_event_ndims=0,
-                validate_args=validate_args,
-                parameters=parameters,
-                name=name)
-
-    def _forward(self, x: Union[float, np.array, tf.Tensor]) -> tf.Tensor:
-        """
-        Implements the forward pass `G` as given by `Y = G(X)`. In this case, it's a
-        simple square root of X.
-
-        Args
-        ----
-          x: Union[float, np.array, tf.Tensor])
-              Variable `X` to receive the transformation.
-
-        Returns
-        -------
-          X: tf.Tensor
-              Square root of `x`.
-        """
-        return tf.sqrt(x)
-
-    def _inverse(self, y: Union[float, np.array, tf.Tensor]) -> tf.Tensor:
-        """
-        Implements G^-1(y).
-
-        Args
-        ----
-          y: Union[float, np.array, tf.Tensor]
-              Values to be transformed back. In this case, they will be squared.
-
-        Returns
-        -------
-          y: tf.Tensor
-              Squared `y`.
-        """
-        return tf.square(y)
-
-    def _inverse_log_det_jacobian(self, y: tf.Tensor) -> tf.Tensor:
-        """
-        When transforming from `P(X)` to `P(Y)` it's necessary to compute the log of the
-        determinant of the Jacobian matrix for each correspondent function `G` which
-        accounts for the volumetric transformations on each domain.
-
-        The inverse log determinant is given by:
-
-        `ln(|J(G^-1(Y)|) = ln(|J(Y ** 2)|) = ln(|2 * Y|) = ln(2 * Y)`
-
-        Args
-        ----
-          y: tf.Tensor
-
-        Returns
-        -------
-          tf.Tensor
-        """
-        return tf.math.log(2 * y)
-
-    def _forward_log_det_jacobian(self, x: tf.Tensor) -> tf.Tensor:
-        """
-        Computes the volumetric change when moving forward from `P(X)` to `P(Y)`, given
-        by:
-
-        `ln(|J(G(X))|) = ln(|J(sqrt(X))|) = ln(|(1 / 2) * X ** (-1 / 2)|) =
-                       = (-1 / 2) * ln(4.0 * X)
-
-        Args
-        ----
-          x: tf.Tensor
-
-        Returns
-        -------
-          tf.tensor
-        """
-        return -0.5 * tf.math.log(4.0 * x)
