@@ -16,11 +16,12 @@ Please refer to this medium [post](https://towardsdatascience.com/implementing-c
 
 ## Requirements
 
- - python{3.6, 3.7, 3.8}
+ - python{3.7, 3.8, 3.9}
  - matplotlib
  - jinja2
- - tensorflow>=2.3.0
- - tensorflow_probability>=0.11.0
+ - tensorflow>=2.10.0
+ - tensorflow_probability>=0.18.0
+ - pandas >= 1.3.5
 
 
 ## Getting Started
@@ -95,16 +96,16 @@ Summary results:
 ```
 Posterior inference {CausalImpact}
 
-                         Average          Cumulative        
-Actual                   78574            1414340           
-Prediction (s.d.)        79232 (736)      1426171 (13253)   
+                         Average          Cumulative
+Actual                   78574            1414340
+Prediction (s.d.)        79232 (736)      1426171 (13253)
 95% CI                   [77743, 80651]   [1399368, 1451711]
-                                                            
-Absolute effect (s.d.)   -657 (736)       -11831 (13253)    
-95% CI                   [-2076, 832]     [-37371, 14971]   
-                                                            
-Relative effect (s.d.)   -0.83% (0.93%)   -0.83% (0.93%)    
-95% CI                   [-2.6%, 1%]      [-2.6%, 1%]       
+
+Absolute effect (s.d.)   -657 (736)       -11831 (13253)
+95% CI                   [-2076, 832]     [-37371, 14971]
+
+Relative effect (s.d.)   -0.83% (0.93%)   -0.83% (0.93%)
+95% CI                   [-2.6%, 1%]      [-2.6%, 1%]
 
 Posterior tail-area probability p:   0.20061
 Posterior prob. of a causal effect:  80%
