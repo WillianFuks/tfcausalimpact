@@ -31,7 +31,6 @@ from pandas.util.testing import assert_frame_equal
 from causalimpact import CausalImpact
 from causalimpact.misc import standardize
 
-
 seed = 123
 tf.random.set_seed(seed)
 np.random.seed(seed)
