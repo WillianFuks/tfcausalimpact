@@ -112,12 +112,13 @@ setup(
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.9',
+        'Programming Language :: Python :: 3.10',
         'Programming Language :: Python :: Implementation :: CPython',
         'Topic :: Scientific/Engineering',
     ],
     project_urls={
         'Source': 'https://github.com/WillianFuks/tfcausalimpact'
     },
-    python_requires='>=3, <3.10',
+    python_requires='>=3, <3.11',
     test_suite='tests'
 )
