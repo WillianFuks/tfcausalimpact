@@ -28,12 +28,12 @@ def test_basic_standardize():
     data = pd.DataFrame(data)
     result, (mu, sig) = standardize(data)
 
-    pd.util.testing.assert_almost_equal(
+    np.testing.assert_array_almost_equal(
         np.zeros(data.shape[1]),
         result.mean().values
     )
 
-    pd.util.testing.assert_almost_equal(
+    np.testing.assert_array_almost_equal(
         np.ones(data.shape[1]),
         result.std(ddof=0).values
     )
@@ -48,12 +48,12 @@ def test_standardize_with_integer_column_names():
     data = pd.DataFrame(data)
     result, (mu, sig) = standardize(data)
 
-    pd.util.testing.assert_almost_equal(
+    np.testing.assert_array_almost_equal(
         np.zeros(data.shape[1]),
         result.mean().values
     )
 
-    pd.util.testing.assert_almost_equal(
+    np.testing.assert_array_almost_equal(
         np.ones(data.shape[1]),
         result.std(ddof=0).values
     )
@@ -64,7 +64,7 @@ def test_standardize_w_various_distinct_inputs():
     test_data = [pd.DataFrame(data, dtype="float") for data in test_data]
     for data in test_data:
         result, (mu, sig) = standardize(data)
-        pd.util.testing.assert_frame_equal(unstandardize(result, (mu, sig)), data)
+        pd.testing.assert_frame_equal(unstandardize(result, (mu, sig)), data)
 
 
 def test_standardize_raises_single_input():
