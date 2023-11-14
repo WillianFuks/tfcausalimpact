@@ -105,7 +105,10 @@ def test_compile_posterior_inferences():
         niter=niter
     )
 
-    expected_index = np.arange(6)
+    # by forcing the expected_index to be of type RangeIndex we avoid mismatching
+    # types on Windows OS.
+    expected_index = pd.RangeIndex(start=0, stop=6, step=1)
+
     # test complete_preds_means
     expec_complete_preds_means = pd.DataFrame(
         data=np.array([7, 7, 7, 16, 16, 16]),
