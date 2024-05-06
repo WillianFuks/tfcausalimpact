@@ -233,9 +233,7 @@ def test_fit_model(monkeypatch):
     monkeypatch.setattr('causalimpact.model.tfp.sts.fit_with_hmc', fit_mock)
     monkeypatch.setattr('causalimpact.model.tfp.sts.build_factored_surrogate_posterior',
                         surrogate_posterior_mock)
-    monkeypatch.setattr('causalimpact.model.tf.optimizers.Adam',
-                        mock.Mock(return_value='optimizer'))
-    monkeypatch.setattr('causalimpact.model.tf.keras.optimizers.Adam',
+    monkeypatch.setattr('causalimpact.model.Adam',
                         mock.Mock(return_value='optimizer'))
 
     monkeypatch.setattr('causalimpact.model.tfp.vi.fit_surrogate_posterior', vi_fit_mock)
