@@ -18,13 +18,18 @@ Module responsible for all functions related to processing model certification a
 creation.
 """
 
-
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
 import tensorflow as tf
 import tensorflow_probability as tfp
+
+try:
+    import tf_keras
+    Adam = tf_keras.optimizers.legacy.Adam
+except (ModuleNotFoundError, ImportError):  # pragma: no cover
+    Adam = tf.optimizers.Adam
 
 tfd = tfp.distributions
 tfb = tfp.bijectors
@@ -359,7 +364,8 @@ def fit_model(
         )
         return samples, kernel_results
     elif method == 'vi':
-        optimizer = tf.optimizers.Adam(learning_rate=0.1)
+        optimizer = Adam(learning_rate=0.1)
+
         variational_steps = 200  # Hardcoded for now
         variational_posteriors = tfp.sts.build_factored_surrogate_posterior(model=model)
 

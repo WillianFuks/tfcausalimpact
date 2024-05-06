@@ -47,11 +47,12 @@ if sys.argv[-1] == 'publish':
 
 install_requires = [
     'jinja2',
-    'pandas >= 1.3.5',
+    'pandas >= 1.3.5, <= 2.2',
     'tensorflow >= 2.10',
-    'tensorflow-probability >= 0.18',
+    'tensorflow-probability[tf] >= 0.18, <= 0.24',
     'matplotlib',
 ]
+
 tests_require = [
     'pytest',
     'pytest-cov',
