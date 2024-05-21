@@ -259,8 +259,10 @@ def format_input_data(data: Union[np.array, pd.DataFrame]) -> pd.DataFrame:
                 'Could not transform input data to pandas DataFrame.'
             )
     validate_y(data.iloc[:, 0])
+    # Pandas deprecated applymap, keep it here for backwards compat.
+    _map = data.map if hasattr(data, 'map') else data.applymap
     # must contain only numeric values
-    if not data.applymap(np.isreal).values.all():
+    if not _map(np.isreal).values.all():
         raise ValueError('Input data must contain only numeric values.')
     # covariates cannot have NAN values
     if data.shape[1] > 1:
