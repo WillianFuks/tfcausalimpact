@@ -29,8 +29,10 @@ _here = os.path.dirname(os.path.abspath(__file__))
 summary_tmpl_path = os.path.join(_here, 'summary', 'templates', 'summary')
 report_tmpl_path = os.path.join(_here, 'summary', 'templates', 'report')
 
-SUMMARY_TMPL = Template(open(summary_tmpl_path).read())
-REPORT_TMPL = Template(open(report_tmpl_path).read())
+with open(summary_tmpl_path) as f:
+    SUMMARY_TMPL = Template(f.read())
+with open(report_tmpl_path) as f:
+    REPORT_TMPL = Template(f.read())
 
 
 def summary(
