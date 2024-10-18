@@ -121,6 +121,6 @@ setup(
     project_urls={
         'Source': 'https://github.com/WillianFuks/tfcausalimpact'
     },
-    python_requires='>=3, <3.12',
+    python_requires='>=3, <3.14',
     test_suite='tests'
 )
