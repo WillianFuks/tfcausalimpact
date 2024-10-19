@@ -176,7 +176,7 @@ def check_input_model(
                     'points equal to pre_data and post_data points and '
                     'same number of covariates. Input design_matrix shape was '
                     f'{component.design_matrix.shape} and expected '
-                    f'{(len(pre_data) + len(post_data), len(pre_data.columns) -1)} '
+                    f'{(len(pre_data) + len(post_data), len(pre_data.columns) - 1)} '
                     'instead.'
                 )
             assert component.design_matrix.dtype == tf.float32
