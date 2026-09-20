@@ -47,7 +47,7 @@ if sys.argv[-1] == 'publish':
 
 install_requires = [
     'jinja2',
-    'pandas >= 1.3.5, <= 2.2',
+    'pandas >= 1.3.5, <= 2.2.3',
     'tensorflow >= 2.10',
     'tensorflow-probability[tf] >= 0.18, <= 0.25',
     'matplotlib',
@@ -115,12 +115,13 @@ setup(
         'Programming Language :: Python :: 3.10',
         'Programming Language :: Python :: 3.11',
         'Programming Language :: Python :: 3.12',
+        'Programming Language :: Python :: 3.13',
         'Programming Language :: Python :: Implementation :: CPython',
         'Topic :: Scientific/Engineering',
     ],
     project_urls={
         'Source': 'https://github.com/WillianFuks/tfcausalimpact'
     },
-    python_requires='>=3, <3.13',
+    python_requires='>=3.8, <3.14',
     test_suite='tests'
 )
