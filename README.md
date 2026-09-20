@@ -16,7 +16,16 @@ Please refer to this medium [post](https://towardsdatascience.com/implementing-c
 
 ## Requirements
 
- - python{3.7, 3.8, 3.9, 3.10, 3.11}
+ - python{3.8, 3.9, 3.10, 3.11, 3.12, 3.13}
+
+To run the test suite without installing Python or project dependencies on the
+host, use Docker:
+
+```bash
+./scripts/test_docker.sh 3.13
+```
+
+The version argument is optional and defaults to Python 3.13.
  - matplotlib
  - jinja2
  - tensorflow>=2.10.0
